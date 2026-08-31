@@ -25,16 +25,15 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from ...core import DEFAULT_HISTORIC_CSV, sha256_file
-from .adapter import (
+from _local import DEFAULT_ARCHIVE, DEFAULT_HISTORIC_CSV
+from adapter import (
     CLASS8_FEATURES,
     build_class_macro_input,
     load_fed_class8_history,
 )
-from .minneapolis_class import ClassProjection, MinneapolisClassProjector
+from minneapolis_class import ClassProjection, MinneapolisClassProjector
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_ARCHIVE = HERE.parents[1] / "tmp" / "mpls_archive_inspection"
 Q0 = pd.Period("2019Q4", freq="Q")
 FUTURE_HORIZON = 13
 ASSET_PAIRS = (
@@ -218,14 +217,6 @@ def run(
         "fixed_class_coefficients_and_bank_state": True,
         "metrics": metrics,
         "match_diagnostics": diagnostics,
-        "inputs_sha256": {
-            "history": sha256_file(history_path),
-            "macro_scenarios": sha256_file(archive / "macro_data_proj.csv"),
-            "coefficients": sha256_file(
-                archive / "output" / "estimated_model_coefficients.csv"
-            ),
-            "y9c": sha256_file(archive / "y9c_bhc_data.csv"),
-        },
     }
     (output / "manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n",

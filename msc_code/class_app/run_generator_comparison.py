@@ -31,27 +31,27 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from ...conditioning import conditional_mixture_sample
-from ...core import DEFAULT_HISTORIC_CSV, sha256_file
-from ...envelope import stable_seed
-from ...generators import clip_to_bounds
-from ...posterior_bvar import MinnesotaPosteriorVARGenerator
-from ...research.block_bridge_ssp import block_bridge_conditional_sample
-from ..fair_rolling_origin.domains_class8 import (
+from _local import (
     CLASS8_FEATURES,
+    DEFAULT_ARCHIVE,
+    DEFAULT_HISTORIC_CSV,
+    DEFAULT_PROTOCOL,
+    GIBVAR,
+    MinnesotaPosteriorVARGenerator,
+    block_bridge_conditional_sample,
+    clip_to_bounds,
+    conditional_mixture_sample,
     load_us_class8_history,
+    stable_seed,
 )
-from ..gibvar import GIBVAR
-from .adapter import (
+from adapter import (
     build_class_macro_input,
     load_fed_class8_history,
     path_to_class8_frame,
 )
-from .minneapolis_class import ClassProjection, MinneapolisClassProjector
+from minneapolis_class import ClassProjection, MinneapolisClassProjector
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_PROTOCOL = HERE.parent / "class8_rolling_origin" / "protocol.json"
-DEFAULT_ARCHIVE = HERE.parents[1] / "tmp" / "mpls_archive_inspection"
 Q0 = pd.Period("2019Q4", freq="Q")
 FUTURE_HORIZON = 13
 TREASURY_RATE_FEATURES = ("treasury_3m", "treasury_10y")
@@ -769,16 +769,6 @@ def run(
         treasury_floor_policy=treasury_floor_policy,
         generated_methods=selected_methods,
     )
-    artifact_names = (
-        "raw_completed_paths.npz",
-        "completed_paths.npz",
-        "bound_contacts_by_feature.csv",
-        "raw_path_diagnostics.csv",
-        "support_diagnostics.json",
-        "path_metrics.csv",
-        "summary.csv",
-        "RESULTS.md",
-    )
     effective_rate_lowers = {
         feature: (
             None
@@ -836,15 +826,6 @@ def run(
         else {GIB_GAUSSIAN_CASE: GAUSSIAN_GIB_COMPLETION_SEED},
         "n_paths": {name: int(len(paths)) for name, paths in path_banks.items()},
         "maximum_condition_restoration_error": restoration_errors,
-        "inputs_sha256": {
-            "history": sha256_file(Path(history_path)),
-            "protocol": sha256_file(Path(protocol_path)),
-            "coefficients": sha256_file(
-                Path(archive) / "output" / "estimated_model_coefficients.csv"
-            ),
-            "y9c": sha256_file(Path(archive) / "y9c_bhc_data.csv"),
-            "macro_scenarios": sha256_file(Path(archive) / "macro_data_proj.csv"),
-        },
         "diagnostic_types": {
             name: type(value).__name__ for name, value in completion_diagnostics.items()
         },
@@ -852,9 +833,6 @@ def run(
         "path_artifacts": {
             "raw": "raw_completed_paths.npz",
             "operational": "completed_paths.npz",
-        },
-        "artifact_sha256": {
-            name: sha256_file(output / name) for name in artifact_names
         },
         "limitations": [
             (

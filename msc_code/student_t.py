@@ -18,9 +18,6 @@ predictive likelihood and then samples innovations from the exact kernel
 conditional.  The incremental particle weight is the mixture predictive
 likelihood of the supplied block.
 
-This is an exploratory conditional extension.  It is not the exact conditional
-law of the discrete tau-zero bootstrap, for which a continuously valued path
-has probability zero.
 """
 
 from __future__ import annotations
@@ -31,9 +28,14 @@ from dataclasses import dataclass
 import numpy as np
 from scipy.special import gammaln, logsumexp
 
-# ---- inlined support definitions (verbatim from core.py, data.py and
-# ---- generators.py of the gibvar package) so this file stands alone.
-# ---- Everything below the end marker is byte-identical to the original.
+
+"""
+The features/bounds/perferredgraph defaults below come from an earlier 
+prototype configuration (incl. VIX). The evaluated runs never rely on them, 
+every runner passes the domain's own features, graph and bounds explicitly 
+(see uncon.py, cond.py, class_app/). 
+
+"""
 
 SANITY_BOUNDS = {
     "gdp_growth": (-15.0, 12.0),

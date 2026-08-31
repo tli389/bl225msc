@@ -1,20 +1,11 @@
 """Standalone Graph-Informed Bootstrap VAR with consecutive shock blocks.
 
-This file isolates the maintained thesis implementation of GIB-VAR from the
-legacy SSP variants in the research codebase.  The important version choice is
-deliberate:
-
 * coefficient systems are refitted from moving blocks of consecutive
   transition pairs;
 * every refitted system's residual pool is recomputed against the original
   chronological training history; and
 * future innovations are sampled as non-circular blocks of consecutive
   multivariate residual rows.
-
-The older ``bootstrap_order`` residual pool is intentionally not supported.
-That pool could join residual rows that were adjacent only because transition
-blocks had been pasted together during the coefficient bootstrap.  Here,
-within-block adjacency always means adjacency in the observed history.
 
 The implementation is self-contained apart from NumPy, pandas, and
 scikit-learn.  The historical seven-variable feature map remains the class

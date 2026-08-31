@@ -2,7 +2,8 @@
 
 fair CRPS (M(M-1) correction), qWCRPS (J=1000 midpoint levels, US tail map),
 energy score (M_E=min(M,300), evenly spaced, fair), variogram (all M, p=0.5),
-coverage 80/95, rank PIT averaged over seeds then pooled into PIT-KS.
+coverage 80/95, standardised interval widths, rank PIT averaged over seeds
+then pooled into PIT-KS.
 Formulas match the standalone package (verified against envelope.py and
 tail_scores.py); only the code is miniature.
 """
@@ -80,17 +81,21 @@ def score_seed_origin(paths, realised, train_std, features):
     lo95, hi95 = np.percentile(paths, [2.5, 97.5], axis=0)
     cov80 = np.mean((realised >= lo80) & (realised <= hi80))
     cov95 = np.mean((realised >= lo95) & (realised <= hi95))
+    width80 = np.mean((hi80 - lo80) / train_std)      # standardised width
+    width95 = np.mean((hi95 - lo95) / train_std)
     pits = np.array([rank_pit(paths[:, h, j], realised[h, j])
                      for h, j in cells])
     return dict(crps=crps, qwcrps=qw, energy=es, variogram=vs,
-                cov80=cov80, cov95=cov95, pits=pits)
+                cov80=cov80, cov95=cov95, width80=width80, width95=width95,
+                pits=pits)
 
 
 def aggregate(per_seed_origin):
     """Thesis hierarchy: mean over seeds within origin, then over origins;
     PITs averaged across seeds per cell, pooled, then KS vs uniform."""
     out = {}
-    for key in ("crps", "qwcrps", "energy", "variogram", "cov80", "cov95"):
+    for key in ("crps", "qwcrps", "energy", "variogram", "cov80", "cov95",
+                "width80", "width95"):
         by_origin = [np.mean([s[key] for s in seeds])
                      for seeds in per_seed_origin]
         out[key] = float(np.mean(by_origin))

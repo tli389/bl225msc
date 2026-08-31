@@ -11,7 +11,9 @@ Expected CRPS (sealed pipeline on this machine / thesis print):
   high-rate recession   Student-t 1.1739 (best; thesis 1.1698)   BVAR 1.1792
 Student-t rows carry the ~0.005 cross-machine SMC wobble.
 
-  python narrative.py [historic_csv conditions_b_csv]
+  python narrative.py                  # data/us/2024-Table_2A_Historic_Domestic.csv
+                                       # + data/us/2024-Table_Exploratory_Macro_Conditions_B_Domestic.csv
+  python narrative.py historic_csv conditions_b_csv
 """
 
 from __future__ import annotations
@@ -118,8 +120,6 @@ if __name__ == "__main__":
     if len(sys.argv) > 2:
         main(sys.argv[1], sys.argv[2])
     else:
-        def find(name):
-            local = HERE / name
-            return str(local if local.exists() else HERE.parent / name)
-        main(find("2024-Table_2A_Historic_Domestic.csv"),
-             find("2024-Table_Exploratory_Macro_Conditions_B_Domestic.csv"))
+        US_DATA = HERE / "data" / "us"
+        main(str(US_DATA / "2024-Table_2A_Historic_Domestic.csv"),
+             str(US_DATA / "2024-Table_Exploratory_Macro_Conditions_B_Domestic.csv"))

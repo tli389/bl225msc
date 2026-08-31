@@ -10,8 +10,9 @@ Expected CRPS -- US: GIB-VAR 0.6293, Gaussian VAR 0.7943, BVAR 0.6563,
 AR-t 0.6496.  UK: GIB-VAR 0.8378, Gaussian VAR 1.1570, BVAR 0.9026,
 AR-t 0.8066.
 
-  python uncon.py [path/to/2026_Final_Historic_Domestic.csv]
-  python uncon.py --uk path/to/uk16_history.csv
+  python uncon.py                      # US, data/us/2026_Final_Historic_Domestic.csv
+  python uncon.py --uk                 # UK, data/uk/uk_macro_research16_historical.csv
+  python uncon.py --uk path/to/uk_history.csv
 """
 
 from __future__ import annotations
@@ -26,6 +27,10 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+DATA = HERE / "data"                       # all input data lives here
+DEFAULT_US_CSV = DATA / "us" / "2026_Final_Historic_Domestic.csv"
+DEFAULT_UK_CSV = DATA / "uk" / "uk_macro_research16_historical.csv"
+import results as RES                                   # noqa: E402
 import scoring as SC                                    # noqa: E402
 from ar_t import UnivariateARGenerator                  # noqa: E402
 from bvar import MinnesotaPosteriorVARGenerator         # noqa: E402
@@ -105,7 +110,7 @@ def fit_benchmarks(hist, o, domain=US):
     return gv, bv, ar
 
 
-def main(csv_path: str, domain=US) -> None:
+def main(csv_path: str, domain=US, out_dir: str = "results") -> None:
     feats = domain["features"]
     hist = domain["load"](csv_path)
     values = hist.to_numpy(float)
@@ -160,18 +165,27 @@ def main(csv_path: str, domain=US) -> None:
               f"{a['variogram']:7.4f} {a['cov80']:6.1%} {a['cov95']:6.1%} "
               f"{a['pit_ks']:7.4f}")
 
+    target = RES.write("unconditional", domain["name"],
+                       [str(hist.index[o]) for o in origins], results, SEEDS,
+                       Path(out_dir) / f"unconditional_{domain['name']}")
+    print(f"\nresults written to {target}  (summary.csv, summary_by_regime.csv, "
+          "crps_by_origin.csv, scores_by_origin.csv, pairwise_differences.csv)")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("csv", nargs="?",
-                        help="US Fed historic CSV (default: next to this "
-                             "file, else one level up)")
-    parser.add_argument("--uk", metavar="UK_CSV",
-                        help="run the UK evaluation on the licensed panel")
+                        help="US Fed historic CSV (default: data/us/"
+                             "2026_Final_Historic_Domestic.csv)")
+    parser.add_argument("--uk", nargs="?", const=str(DEFAULT_UK_CSV),
+                        metavar="UK_CSV",
+                        help="run the UK evaluation on the licensed panel "
+                             "(default location: data/uk/"
+                             "uk_macro_research16_historical.csv)")
+    parser.add_argument("--out", default="results",
+                        help="folder for the CSV results (default: results/)")
     args = parser.parse_args()
     if args.uk:
-        main(args.uk, UK)
+        main(args.uk, UK, args.out)
     else:
-        name = "2026_Final_Historic_Domestic.csv"
-        default = HERE / name if (HERE / name).exists() else HERE.parent / name
-        main(args.csv or str(default), US)
+        main(args.csv or str(DEFAULT_US_CSV), US, args.out)

@@ -22,22 +22,23 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from ...conditioning import conditional_mixture_sample
-from ...core import DEFAULT_HISTORIC_CSV, sha256_file
-from ...envelope import stable_seed
-from ...generators import clip_to_bounds
-from ...research.block_bridge_ssp import block_bridge_conditional_sample
-from ..fair_rolling_origin.domains_class8 import (
+from _local import (
     CLASS8_FEATURES,
+    DEFAULT_HISTORIC_CSV,
+    MinnesotaPosteriorVARGenerator,
+    block_bridge_conditional_sample,
+    clip_to_bounds,
+    conditional_mixture_sample,
     load_us_class8_history,
+    stable_seed,
 )
-from .adapter import (
+from adapter import (
     build_class_macro_input,
     load_fed_class8_history,
     path_to_class8_frame,
 )
-from .minneapolis_class import MinneapolisClassProjector
-from .run_generator_comparison import (
+from minneapolis_class import MinneapolisClassProjector
+from run_generator_comparison import (
     BVAR_CASE,
     DEFAULT_ARCHIVE,
     DEFAULT_PROTOCOL,
@@ -61,22 +62,15 @@ from .run_generator_comparison import (
 )
 
 HERE = Path(__file__).resolve().parent
-PROJECT_ROOT = HERE.parents[1]
+PROJECT_ROOT = HERE.parent
+# Outputs of the two preceding runners (see class_app/README.md for the order):
+#   run_matched_official.py    --out results/matched_official
+#   run_generator_comparison.py --out results/generator_comparison
 DEFAULT_MATCHED_REFERENCE = (
-    PROJECT_ROOT
-    / "results"
-    / "class8_class_fed_severe_matched_rebased_20260814"
-    / "matched_future_class8.csv"
+    PROJECT_ROOT / "results" / "matched_official" / "matched_future_class8.csv"
 )
 DEFAULT_MATCHED_REFERENCE_MANIFEST = DEFAULT_MATCHED_REFERENCE.parent / "manifest.json"
-DEFAULT_UNEMPLOYMENT_ONLY = (
-    PROJECT_ROOT
-    / "results"
-    / "class8_class_fed_severe_no_rate_floor_full_20260816"
-)
-MATCHED_REFERENCE_SHA256 = (
-    "c500a6c707b6f3eba09cc3de8b7e71840fb3c7871c36ef9f4a308c844b5f69ac"
-)
+DEFAULT_UNEMPLOYMENT_ONLY = PROJECT_ROOT / "results" / "generator_comparison"
 GIB_CASE = GIB_STUDENT_CASE
 CONDITIONED_FEATURES = ("unemployment", "hpi_qoq_growth")
 SCENARIO_NAME = "fed_severe"
@@ -84,18 +78,10 @@ SCENARIO_NAME = "fed_severe"
 
 def _load_condition_reference(
     path: Path = DEFAULT_MATCHED_REFERENCE,
-    *,
-    require_locked_hash: bool = True,
 ) -> pd.DataFrame:
     path = Path(path).resolve()
     if not path.is_file():
         raise FileNotFoundError(f"matched/rebased CLASS8 reference is missing: {path}")
-    observed_hash = sha256_file(path)
-    if require_locked_hash and observed_hash != MATCHED_REFERENCE_SHA256:
-        raise ValueError(
-            "matched/rebased CLASS8 reference hash changed: "
-            f"{observed_hash} != {MATCHED_REFERENCE_SHA256}"
-        )
     frame = pd.read_csv(path)
     expected_columns = ("quarter", *CLASS8_FEATURES)
     if tuple(frame.columns) != expected_columns:
@@ -529,16 +515,6 @@ def run(
         methods=selected_methods,
     )
 
-    artifact_names = (
-        "raw_completed_paths.npz",
-        "completed_paths.npz",
-        "condition_reference.csv",
-        "path_metrics.csv",
-        "summary.csv",
-        "delta_vs_unemployment_only.csv",
-        "support_diagnostics.json",
-        "RESULTS.md",
-    )
     n_paths = {method: int(len(paths)) for method, paths in operational_banks.items()}
     effective_rate_lowers = {
         feature: (
@@ -586,9 +562,7 @@ def run(
             "scenario": SCENARIO_NAME,
             "matched_rebased": True,
             "source_path": str(Path(matched_reference_path).resolve()),
-            "source_sha256": sha256_file(Path(matched_reference_path).resolve()),
             "source_manifest_path": str(matched_reference_manifest),
-            "source_manifest_sha256": sha256_file(matched_reference_manifest),
             "future_start": str(reference.index.min()),
             "future_end": str(reference.index.max()),
             "transformations": {
@@ -601,8 +575,6 @@ def run(
         },
         "unemployment_only_reference": {
             "directory": str(unemployment_only_dir),
-            "manifest_sha256": sha256_file(unemployment_manifest_path),
-            "summary_sha256": sha256_file(unemployment_summary_path),
         },
         "simulation": {
             "paths_per_model": next(iter(n_paths.values())),
@@ -650,22 +622,6 @@ def run(
             ),
         },
         "support_warning_summary": warning_summary,
-        "inputs_sha256": {
-            "history": sha256_file(Path(history_path)),
-            "protocol": sha256_file(Path(protocol_path)),
-            "matched_reference": sha256_file(Path(matched_reference_path)),
-            "matched_reference_manifest": sha256_file(matched_reference_manifest),
-            "unemployment_only_manifest": sha256_file(unemployment_manifest_path),
-            "unemployment_only_summary": sha256_file(unemployment_summary_path),
-            "coefficients": sha256_file(
-                Path(archive) / "output" / "estimated_model_coefficients.csv"
-            ),
-            "y9c": sha256_file(Path(archive) / "y9c_bhc_data.csv"),
-            "macro_scenarios": sha256_file(Path(archive) / "macro_data_proj.csv"),
-        },
-        "artifact_sha256": {
-            name: sha256_file(output / name) for name in artifact_names
-        },
         "limitations": [
             "This is a post-development sensitivity and does not replace the maintained unemployment-only application.",
             "The bank state and CLASS coefficients are fixed at 2019Q4.",
@@ -735,6 +691,5 @@ __all__ = [
     "CONDITIONED_FEATURES",
     "DEFAULT_MATCHED_REFERENCE",
     "DEFAULT_UNEMPLOYMENT_ONLY",
-    "MATCHED_REFERENCE_SHA256",
     "run",
 ]

@@ -12,8 +12,9 @@ Gaussian VAR 1.0653, AR-t 0.8741, Gaussian GIB 0.9940, Student-t GIB
 0.9784, BVAR 0.9615.  Student-t rows move ~0.005 across machines (SMC
 resampling amplifies floating-point noise).
 
-  python cond.py [path/to/2026_Final_Historic_Domestic.csv]
-  python cond.py --uk path/to/uk16_history.csv
+  python cond.py                       # US, data/us/2026_Final_Historic_Domestic.csv
+  python cond.py --uk                  # UK, data/uk/uk_macro_research16_historical.csv
+  python cond.py --uk path/to/uk_history.csv
 """
 
 from __future__ import annotations
@@ -27,11 +28,13 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+import results as RES                                   # noqa: E402
 import scoring as SC                                    # noqa: E402
 from gaussian import conditional_mixture_sample         # noqa: E402
 from student_t import block_bridge_conditional_sample   # noqa: E402
-from uncon import (HORIZON, N_PATHS, SEEDS, UK, US,     # noqa: E402
-                   fit_benchmarks, fit_origin, q4_origins, stable_seed)
+from uncon import (DEFAULT_UK_CSV, DEFAULT_US_CSV, HORIZON,  # noqa: E402
+                   N_PATHS, SEEDS, UK, US, fit_benchmarks, fit_origin,
+                   q4_origins, stable_seed)
 
 PARTICLES, TAU, NU = 10_000, 0.75, 20.0
 ROWS = ("Gaussian VAR", "AR-t", "Gaussian GIB-VAR", "Student-t GIB-VAR",
@@ -46,7 +49,7 @@ THESIS = {("US", "Gaussian VAR"): 0.7338, ("US", "AR-t"): 0.6507,
           ("UK", "Minnesota BVAR"): 0.9615}
 
 
-def main(csv_path: str, domain=US) -> None:
+def main(csv_path: str, domain=US, out_dir: str = "results") -> None:
     feats = domain["features"]
     cond = domain["cond_feature"]
     ci = feats.index(cond) if isinstance(feats, list) else \
@@ -118,18 +121,27 @@ def main(csv_path: str, domain=US) -> None:
               f"{a['qwcrps']:7.4f} {a['energy']:8.4f} "
               f"{a['variogram']:7.4f} {a['cov80']:6.1%} {a['cov95']:6.1%}")
 
+    target = RES.write("conditional", domain["name"],
+                       [str(hist.index[o]) for o in origins], results, SEEDS,
+                       Path(out_dir) / f"conditional_{domain['name']}")
+    print(f"\nresults written to {target}  (summary.csv, summary_by_regime.csv, "
+          "crps_by_origin.csv, scores_by_origin.csv, pairwise_differences.csv)")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("csv", nargs="?",
-                        help="US Fed historic CSV (default: next to this "
-                             "file, else one level up)")
-    parser.add_argument("--uk", metavar="UK_CSV",
-                        help="run the UK evaluation on the licensed panel")
+                        help="US Fed historic CSV (default: data/us/"
+                             "2026_Final_Historic_Domestic.csv)")
+    parser.add_argument("--uk", nargs="?", const=str(DEFAULT_UK_CSV),
+                        metavar="UK_CSV",
+                        help="run the UK evaluation on the licensed panel "
+                             "(default location: data/uk/"
+                             "uk_macro_research16_historical.csv)")
+    parser.add_argument("--out", default="results",
+                        help="folder for the CSV results (default: results/)")
     args = parser.parse_args()
     if args.uk:
-        main(args.uk, UK)
+        main(args.uk, UK, args.out)
     else:
-        name = "2026_Final_Historic_Domestic.csv"
-        default = HERE / name if (HERE / name).exists() else HERE.parent / name
-        main(args.csv or str(default), US)
+        main(args.csv or str(DEFAULT_US_CSV), US, args.out)

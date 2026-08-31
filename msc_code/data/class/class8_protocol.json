@@ -1,0 +1,178 @@
+{
+  "study_id": "exploratory_us_class8_rolling_origin_20260814",
+  "protocol_version": "0.1-class8-pilot",
+  "status": "post-development CLASS-aligned pilot; exploratory and not claim-eligible",
+  "claim_eligible": false,
+  "evidence_boundary": "The CLASS input requirements and earlier US7/US16 results were inspected before this pilot was specified. Results are exploratory and must not replace the report-final US7 evidence without a complete rerun and corresponding thesis revision.",
+  "domains": {
+    "us_class8": {
+      "country": "US",
+      "history_start": "1990Q1",
+      "features": [
+        "gdp_growth",
+        "unemployment",
+        "treasury_3m",
+        "treasury_10y",
+        "bbb_spread",
+        "hpi_qoq_growth",
+        "cre_qoq_growth",
+        "equity_qoq_growth"
+      ],
+      "conditioned_feature": "unemployment",
+      "origins": [
+        "2004Q4", "2005Q4", "2006Q4", "2007Q4", "2008Q4",
+        "2009Q4", "2010Q4", "2011Q4", "2012Q4", "2013Q4",
+        "2014Q4", "2015Q4", "2016Q4", "2017Q4", "2018Q4",
+        "2019Q4", "2020Q4", "2021Q4", "2022Q4"
+      ],
+      "bounds": {
+        "gdp_growth": [-40.0, 40.0],
+        "unemployment": [0.0, 35.0],
+        "treasury_3m": [0.0, 20.0],
+        "treasury_10y": [0.0, 25.0],
+        "bbb_spread": [0.0, 15.0],
+        "hpi_qoq_growth": [-25.0, 20.0],
+        "cre_qoq_growth": [-40.0, 30.0],
+        "equity_qoq_growth": [-80.0, 80.0]
+      },
+      "expert_edges": {
+        "gdp_growth": ["unemployment", "treasury_3m", "bbb_spread"],
+        "unemployment": ["gdp_growth", "bbb_spread"],
+        "treasury_3m": ["unemployment", "gdp_growth"],
+        "treasury_10y": ["treasury_3m"],
+        "bbb_spread": ["unemployment", "gdp_growth"],
+        "hpi_qoq_growth": ["unemployment"],
+        "cre_qoq_growth": ["gdp_growth", "treasury_10y", "bbb_spread"],
+        "equity_qoq_growth": ["gdp_growth", "bbb_spread"]
+      },
+      "qwcrps_tails": {
+        "gdp_growth": "lower",
+        "unemployment": "upper",
+        "treasury_3m": "two_sided",
+        "treasury_10y": "two_sided",
+        "bbb_spread": "upper",
+        "hpi_qoq_growth": "lower",
+        "cre_qoq_growth": "lower",
+        "equity_qoq_growth": "lower"
+      },
+      "gib_coefficient_systems": 25,
+      "gib_path_solver": "lars",
+      "bvar_own_lag_means": null,
+      "source_mapping": {
+        "gdp_growth": ["Real GDP growth"],
+        "unemployment": ["Unemployment rate"],
+        "treasury_3m": ["3-month Treasury rate"],
+        "treasury_10y": ["10-year Treasury yield"],
+        "bbb_spread": ["BBB corporate yield", "10-year Treasury yield"],
+        "hpi_qoq_growth": ["House Price Index (Level)"],
+        "cre_qoq_growth": ["Commercial Real Estate Price Index (Level)"],
+        "equity_qoq_growth": ["Dow Jones Total Stock Market Index (Level)"]
+      },
+      "transformations": {
+        "gdp_growth": "direct published rate",
+        "unemployment": "direct published level",
+        "treasury_3m": "direct published level",
+        "treasury_10y": "direct published level",
+        "bbb_spread": "BBB corporate yield minus 10-year Treasury yield",
+        "hpi_qoq_growth": "100 * (HPI_t / HPI_{t-1} - 1)",
+        "cre_qoq_growth": "100 * (CRE_t / CRE_{t-1} - 1)",
+        "equity_qoq_growth": "100 * (equity_t / equity_{t-1} - 1)"
+      },
+      "reconstruction": {
+        "BBB corporate yield": "bbb_spread + treasury_10y",
+        "House Price Index (Level)": "last_HPI * cumulative_product(1 + hpi_qoq_growth / 100)",
+        "Commercial Real Estate Price Index (Level)": "last_CRE * cumulative_product(1 + cre_qoq_growth / 100)",
+        "Dow Jones Total Stock Market Index (Level)": "last_equity * cumulative_product(1 + equity_qoq_growth / 100)"
+      }
+    }
+  },
+  "task_methods": {
+    "unconditional": [
+      "univariate_ar_t",
+      "gaussian_var",
+      "weighted_lasso_var",
+      "gibvar_native",
+      "minnesota_bvar"
+    ],
+    "conditional": [
+      "univariate_ar_t",
+      "gaussian_var",
+      "weighted_lasso_var",
+      "gibvar_gaussian",
+      "gibvar_student_t",
+      "minnesota_bvar"
+    ]
+  },
+  "design": {
+    "horizon": 12,
+    "paths": 1000,
+    "minimum_history_quarters": 60,
+    "origin_step_quarters": 4,
+    "minimum_crisis_overlap_quarters": 4,
+    "simulation_seeds": [7, 19, 43],
+    "bootstrap_seed": 7,
+    "bootstrap_draws": 2000,
+    "quantile_grid_size": 1000,
+    "primary_scoring_policy": "raw",
+    "sensitivity_scoring_policy": "clipped"
+  },
+  "gibvar": {
+    "cross_domain_computational_roster": "25 fitted coefficient systems for the US CLASS8 pilot",
+    "block_length": 4,
+    "expert_weight": 0.35,
+    "max_parents": 3,
+    "stability_cap": 0.995,
+    "residual_pool": "chronological and mean-centred with the shift absorbed into the intercept"
+  },
+  "student_t": {
+    "degrees_of_freedom": 20.0,
+    "tau": 0.75,
+    "conditional_particles": 10000,
+    "ess_resample_ratio": 0.5,
+    "tempering_cess_ratio": 0.5,
+    "max_tempering_steps": 50,
+    "rejuvenate_after_resampling": true
+  },
+  "bvar": {
+    "posterior_draws": 100,
+    "burn_in": 150,
+    "thin": 3,
+    "maximum_sampling_iterations": 20000,
+    "fit_seed_base": 211
+  },
+  "univariate_ar_t": {
+    "candidate_lags": [1, 2],
+    "selection": "BIC",
+    "bic_comparison_sample": "common observations beginning after the maximum candidate lag",
+    "estimation": "conditional Student-t maximum likelihood",
+    "maximum_spectral_radius": 0.995,
+    "minimum_innovation_scale": 0.001,
+    "minimum_degrees_of_freedom": 2.1,
+    "maximum_degrees_of_freedom": 30.0,
+    "cross_variable_dependence": "none",
+    "conditional_rule": "sample the unchanged independent product law and restore the supplied path exactly"
+  },
+  "scoring": {
+    "metrics": [
+      "fair finite-ensemble CRPS",
+      "predeclared adverse-tail quantile-weighted CRPS",
+      "rank PIT",
+      "80 and 95 percent coverage and interval width",
+      "fair energy score",
+      "variogram score with power 0.5"
+    ],
+    "conditional_exclusion": "the realised unemployment path is supplied identically to every method and excluded from every marginal and joint score",
+    "aggregation": "average simulation seeds within each historical origin, then give every origin equal weight",
+    "pit_ks_interpretation": "descriptive calibration distance only"
+  },
+  "inference": {
+    "bootstrap": "circular moving blocks over the complete chronological origin grid",
+    "block_length": 3
+  },
+  "limitations": {
+    "status": "exploratory pilot rather than report-final evidence",
+    "data": "final revised pseudo-out-of-sample data, not real-time vintages",
+    "quick_mode": "one-origin reduced-Monte-Carlo results are plumbing diagnostics and not substantive model rankings",
+    "class": "CLASS projections condition on a fixed satellite and do not include satellite parameter uncertainty"
+  }
+}

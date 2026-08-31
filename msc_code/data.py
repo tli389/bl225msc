@@ -88,22 +88,13 @@ UK_OWN_LAG = {"real_gdp_growth_annualized_pct": 0.0,
               "hpi_qoq_growth_pct": 0.0, "equity_qoq_growth_pct": 0.0,
               "cpi_inflation_yoy_pct": 0.0}
 
-UK_SHA = "ddf6e14bc8384056eec0a24284863928f6b4a08a554fc482b2e3865795242760"
-
-
-def load_uk_history(path: str, expect_sha: str | None = UK_SHA):
+def load_uk_history(path: str):
     """Licensed UK16 processed panel -> canonical UK8 view.
 
     The file is the provenance-tracked panel written by the research
     pipeline ('quarter' column + feature columns); it is licensed and never
-    shipped.  The SHA-256 check refuses any other file.
+    shipped.
     """
-    import hashlib
-    if expect_sha is not None:
-        digest = hashlib.sha256(open(path, "rb").read()).hexdigest()
-        if digest != expect_sha:
-            raise ValueError(f"UK history SHA-256 mismatch: {digest[:16]}... "
-                             "is not the licensed panel this study used")
     raw = pd.read_csv(path)
     missing = {"quarter", *UK_FEATURES}.difference(raw.columns)
     if missing:
