@@ -1,73 +1,46 @@
-# msc_code -- the report's methods
+# msc_code
 
-Everything runs from this folder.  Requirements: numpy, pandas,
-scikit-learn, scipy (no package installation needed).  Reported numbers
-reproduce digit-for-digit under pinned dependencies (numpy 2.4.6, pandas
-2.3.3, scikit-learn 1.9.0, scipy 1.17.1), except the Student-t rows, which
-move by a few thousandths across machines (SMC resampling amplifies
-floating-point noise; documented in the report and in `src/README.md`).
+Code for the report. Requirements: Python 3 with numpy, pandas, scikit-learn,
+scipy. Run everything from this folder.
 
-## Layout
+    src/          the models, one short file each: gibvar.py, gaussian_adapter.py,
+                  student_t.py, gaussian_var.py, ar_t.py, bvar.py
+    evaluation/   data loaders, scoring, CSV writer
+    class_app/    the CLASS stress-testing application
+    data/         inputs;  results/  outputs (gitignored)
 
-    src/          every model of the report in one short readable file each, plus
-                  check_benchmarks.py (the US and UK rolling-origin evaluations, both
-                  tasks) and check_narrative.py (the Conditions B narrative study)
-    evaluation/   data loaders, scoring, CSV results writer
-    class_app/    the CLASS stress-testing application (see class_app/README.md)
-    data/         all input data;  results/   run outputs (gitignored)
+## Rolling-origin evaluations (report tables) and the narrative study
 
-## Start here: `src/`
+    python src/check_benchmarks.py                        # US and UK, both tasks, ~15 min
+    python src/check_benchmarks.py --domain US --limit 3  # quick smoke test
+    python src/check_narrative.py                         # Conditions B masks, ~1 min
 
-| file | what it is | lines |
-|---|---|---|
-| `src/gibvar.py` | GIB-VAR: graph-weighted Lasso (FWL partialling, forward-validated penalty, three-parent refit), spectral cap, 25 block-bootstrap refits with chronological residual pools, unconditional block sampler | ~150 |
-| `src/gaussian_adapter.py` | Gaussian completion: path mean and covariance, Schur conditioning, mixture reweighting; the unconditional Gaussian law used by the VAR and BVAR rows | ~80 |
-| `src/student_t.py` | Student-t residual-block bridge: shrunk historical blocks, covariance-matched t noise, block likelihood, conditional t draw, SMC with resampling | ~160 |
-| `src/gaussian_var.py` | dense Gaussian VAR benchmark | ~40 |
-| `src/ar_t.py` | independent AR-t benchmark | ~110 |
-| `src/bvar.py` | fixed-prior Minnesota BVAR benchmark (semi-conjugate Gibbs) | ~90 |
-| `src/check_benchmarks.py` | fits all six models at every rolling origin, generates, scores and writes `results/<task>_<domain>/` | |
-| `src/check_narrative.py` | the Fed 2024 Conditions B study: three masks, Gaussian GIB-VAR / Student-t GIB-VAR / BVAR from the 2023Q4 jump-off | |
+`check_benchmarks.py` writes `results/<task>_<domain>/` (`summary.csv` is the
+report's table, plus per-origin scores and the pairwise bootstrap intervals)
+and prints each generator's CRPS next to the report's. The UK panel
+(`data/uk/uk_macro_research16_historical.csv`) contains licensed series and is
+not included; pass your copy with `--uk path.csv` or drop it in place.
 
-    python src/check_benchmarks.py                        # US and UK, both tasks (~15 min)
-    python src/check_benchmarks.py --domain US --limit 3  # smoke test
-    python src/check_narrative.py                         # Conditions B masks (~1 min)
+## CLASS application
 
-Expected rows -- US unconditional: GIB-VAR 0.6293, Gaussian VAR 0.7943, BVAR
-0.6563, AR-t 0.6496; US conditional: Gaussian VAR 0.7338, AR-t 0.6507,
-Gaussian GIB 0.6002, Student-t GIB 0.6021, BVAR 0.6184; UK: 0.8378 / 1.1570 /
-0.9026 / 0.8066 and 1.0653 / 0.8741 / 0.9940 / 0.9784 / 0.9615.  `src/README.md`
-lists the narrative rows and the one implementation difference behind the
-Student-t noise.
+Download the Minneapolis Fed "COVID-19 Stress Test Tool" archive
+(https://www.minneapolisfed.org/banking/financial-studies-and-community-banking/covid-19-stress-test-tool)
+and unzip it to `data/class/mpls_archive/` so that `macro_data_hist.csv`,
+`macro_data_proj.csv`, `y9c_bhc_data.csv` and `output/estimated_model_coefficients.csv`
+exist there. Then, in order:
 
-## `class_app/`
+    python class_app/run_matched_official.py     --out results/matched_official
+    python class_app/run_generator_comparison.py --out results/generator_comparison
+    python class_app/run_two_condition_sensitivity.py --out results/two_condition
 
-The CLASS application (complete the DFAST 2020 severely adverse scenario with
-Student-t GIB-VAR, Gaussian GIB-VAR and the BVAR, project every path through
-the public Minneapolis CLASS model) runs on the `src/` models through
-`class_app/_backend.py`.  See `class_app/README.md` for the archive setup and
-run order.
+The last step is the application in the report (unemployment and HPI growth
+supplied, six variables completed). Steps 2 and 3 default to a small smoke
+configuration (about three minutes each); add `--full` for the report protocol
+(1,000 paths, 10,000 particles), which takes about an hour per step.
 
-## Results CSVs
+## Reproduction
 
-Each results folder holds `summary.csv` (the table), `crps_by_origin.csv`
-(CRPS per origin per generator, crisis-overlap flag, best generator),
-`scores_by_origin.csv` (every score per origin x seed x generator),
-`summary_by_regime.csv` and `pairwise_differences.csv` (model A minus model
-B with the 95% moving-block bootstrap interval, overall / crisis / calm), plus
-a README explaining the files and how the interval is built
-(`evaluation/results.py` holds the code).
-
-## Data (`data/`)
-
-    data/us/     2026_Final_Historic_Domestic.csv            main US history (committed)
-                 2024-Table_2A_Historic_Domestic.csv          2024 vintage for the narrative study (committed)
-                 2024-Table_Exploratory_Macro_Conditions_B_Domestic.csv   (committed)
-    data/uk/     uk_macro_research16_historical.csv          licensed UK panel -- NOT committed; pass
-                 source/                                     your copy to check_benchmarks.py, or drop it here
-    data/class/  class8_protocol.json                        locked CLASS8 protocol (committed)
-                 mpls_archive/                               public Minneapolis CLASS archive -- NOT
-                                                             committed; see class_app/README.md
-
-Every runner and the CLASS application read from this folder by default;
-`check_benchmarks.py` and `check_narrative.py` also accept explicit paths.
+All rows reproduce digit-for-digit except the Student-t GIB-VAR rows, which
+land within a few thousandths: the runs behind the report added an adaptive
+likelihood-tempering step when particle weights concentrated, `src/student_t.py`
+resamples instead, and SMC resampling amplifies floating-point noise.

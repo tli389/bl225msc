@@ -63,7 +63,7 @@ from run_generator_comparison import (
 
 HERE = Path(__file__).resolve().parent
 PROJECT_ROOT = HERE.parent
-# Outputs of the two preceding runners (see class_app/README.md for the order):
+# Outputs of the two preceding runners (see the README for the run order):
 #   run_matched_official.py    --out results/matched_official
 #   run_generator_comparison.py --out results/generator_comparison
 DEFAULT_MATCHED_REFERENCE = (
