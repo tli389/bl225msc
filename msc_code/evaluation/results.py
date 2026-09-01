@@ -1,4 +1,4 @@
-"""results.py -- write the rolling-origin results of uncon.py / cond.py to CSV.
+"""results.py -- write the rolling-origin results of src/check_benchmarks.py to CSV.
 
 Each run writes one folder, results/<task>_<domain>/, containing
 
@@ -214,29 +214,5 @@ def write(task, domain, origin_names, per_origin, seeds, out_dir):
     return out
 
 
-_README = """# {task} results, {domain} ({n} forecast origins)
-
-| file | what it holds |
-|---|---|
-| `summary.csv` | one row per generator: CRPS, qWCRPS, energy, variogram, coverage 80/95, standardised interval widths 80/95, PIT-KS -- averaged the thesis way (seeds within origin, then origins equally). These are the thesis table numbers. |
-| `summary_by_regime.csv` | the same averages over all, crisis-overlap and calm origins (the subgroup means quoted in the thesis). |
-| `crps_by_origin.csv` | one row per origin: seed-averaged CRPS of every generator, the crisis-overlap flag, and the best generator at that origin. Lower is better. |
-| `scores_by_origin.csv` | every score for every origin x seed x generator (long format, for pivoting or plotting). |
-| `pairwise_differences.csv` | model A minus model B: mean per-origin difference, origins A wins, and a 95% moving-block bootstrap interval, overall and split into crisis-overlap and calm origins. Negative favours model A. |
-
-**Crisis-overlap origin**: the twelve-quarter target window shares at least
-four quarters with the crisis windows -- US: GFC (2007Q1-2010Q4) or COVID
-(2019Q3-2021Q4); UK: COVID (2020Q1-2021Q4).
-
-**How the 95% interval is built** (identical to the sealed package):
-1. per-origin differences of the seed-averaged score, A minus B, in
-   chronological order;
-2. resample origin positions with a circular moving-block bootstrap, block
-   length 3 (neighbouring origins stay together because their target windows
-   overlap);
-3. mean of each resample; 2,000 resamples, seeded from the locked base seed
-   7 so the numbers are reproducible;
-4. interval = 2.5th and 97.5th percentiles of the 2,000 means.
-For the crisis and calm rows the full grid is resampled and then filtered to
-that regime. With so few origins the intervals are descriptive, not a test.
+_README = """
 """

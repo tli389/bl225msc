@@ -7,7 +7,7 @@ changes.  This module performs that reversible boundary conversion while
 leaving the supplied CLASS implementation untouched.
 
 The supplied Minneapolis archive fixes its bank state at 2019Q4.  For that
-reason ``class_q0`` is mandatory and future rows must begin in the immediately
+reason class_q0 is mandatory and future rows must begin in the immediately
 following quarter.  The adapter never silently relabels a later forecast.
 """
 

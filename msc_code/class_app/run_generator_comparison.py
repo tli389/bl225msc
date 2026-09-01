@@ -2,10 +2,10 @@
 
 This pilot fits GIB--VAR and the Minnesota BVAR to the CLASS-aligned eight-
 variable history available at 2019Q4.  Both models receive the same future
-unemployment path from one Minneapolis scenario (``fed_severe`` by default)
+unemployment path from one Minneapolis scenario (fed_severe by default)
 and complete the other seven variables for 13 quarters.  A declared
 application policy is then applied before the paths enter one frozen,
-fit-once Minneapolis CLASS projector.  The optional ``no-lower-floor`` policy
+fit-once Minneapolis CLASS projector.  The optional no-lower-floor`` policy
 allows negative Treasury rates while preserving every other configured bound.
 
 The fixed DFAST 2020 operational-risk and market-shock overlays are excluded
@@ -13,7 +13,7 @@ by default so differences arise from the completed macroeconomic paths.  The
 output is exploratory and conditional on the 2019Q4 bank state and published
 CLASS coefficients; it is not a current bank-capital forecast.
 
-``--gaussian-only`` generates only Gaussian GIB--VAR paths plus the official
+--gaussian-only generates only Gaussian GIB--VAR paths plus the official
 scenario comparator, allowing the sealed Student-t and BVAR results to remain
 unchanged.
 """

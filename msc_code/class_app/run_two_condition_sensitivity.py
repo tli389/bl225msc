@@ -5,7 +5,7 @@ reuses its 2019Q4 model specifications and fixed CLASS projector, but supplies
 both the DFAST 2020 severely adverse unemployment path and its matched,
 2019Q4-rebased HPI quarter-on-quarter growth path.
 
-``--gaussian-only`` projects only Gaussian GIB--VAR paths plus the matched
+--gaussian-only projects only Gaussian GIB--VAR paths plus the matched
 complete-path comparator and requires the corresponding Gaussian-only
 unemployment result for its within-method delta.
 """

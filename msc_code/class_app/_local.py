@@ -1,12 +1,11 @@
 """Local wiring for the CLASS application.
 
-The three ``run_*.py`` scripts were written inside the sealed research
+The three run_*.py scripts were written inside the sealed research
 package and imported their building blocks through package-relative
-imports.  This module supplies the same names from the files in this
-folder (``msc_code``): the scientific code comes from ``gibvar.py``,
-``gaussian.py``, ``student_t.py``, ``bvar.py`` and ``uncon.py`` one level
-up, and the CLASS8 history loader is the package's own, copied verbatim
-so the feature names match ``adapter.py`` and ``data/class/class8_protocol.json``.
+imports.  This module supplies the same names: the generators come from
+../src through _backend.py, and the CLASS8 history loader is the
+package's own, copied verbatim so the feature names match adapter.py and
+data/class/class8_protocol.json.
 """
 
 from __future__ import annotations
@@ -20,15 +19,11 @@ import pandas as pd
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
-for _p in (str(HERE), str(ROOT)):
-    if _p not in sys.path:
-        sys.path.insert(0, _p)
-
-from gaussian import clip_to_bounds, conditional_mixture_sample  # noqa: E402
-from student_t import block_bridge_conditional_sample  # noqa: E402
-from bvar import MinnesotaPosteriorVARGenerator  # noqa: E402
-from gibvar import GIBVAR  # noqa: E402
-from uncon import stable_seed  # noqa: E402
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
+from _backend import (  # noqa: E402
+    GIBVAR, MinnesotaPosteriorVARGenerator, block_bridge_conditional_sample,
+    clip_to_bounds, conditional_mixture_sample, stable_seed)
 
 DEFAULT_HISTORIC_CSV = ROOT / "data" / "us" / "2026_Final_Historic_Domestic.csv"
 DEFAULT_ARCHIVE = ROOT / "data" / "class" / "mpls_archive"

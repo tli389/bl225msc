@@ -6,11 +6,11 @@ contains its own, older 2019 history.  This module constructs a separately
 labelled official-path comparator with the same revised seed history and the
 same frozen CLASS settings as the generated paths.
 
-The default ``rebase_growth`` policy preserves the archive scenario's future
+The default rebase_growth policy preserves the archive scenario's future
 quarter-on-quarter HPI, commercial-property and equity-index movements, then
 rebases those movements onto the revised 2019Q4 index levels.  This matches
 the growth-rate state supplied by the statistical generators.  The optional
-``exact_levels`` policy retains the archive's future index levels literally;
+exact_levels policy retains the archive's future index levels literally;
 because its 2019Q4 levels differ from the revised history, this creates a
 revision-driven jump at the splice and is reported only as a sensitivity.
 """

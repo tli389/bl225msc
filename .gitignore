@@ -1,0 +1,15 @@
+# --- not part of the submission ---
+# personal working tree (Codex workspace, sealed evidence package, tmp runs)
+multistate/
+
+# data not shipped: the public Minneapolis CLASS archive (download, see
+# msc_code/class_app/README.md) and the licensed UK panel + BoE sources
+msc_code/data/class/mpls_archive/
+msc_code/data/uk/
+
+# run outputs
+msc_code/results/
+
+# python noise
+__pycache__/
+*.pyc
