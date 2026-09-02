@@ -19,7 +19,14 @@ scipy. Run everything from this folder.
 report's table, plus per-origin scores and the pairwise bootstrap intervals)
 and prints each generator's CRPS next to the report's. The UK panel
 (`data/uk/uk_macro_research16_historical.csv`) contains licensed series and is
-not included; pass your copy with `--uk path.csv` or drop it in place.
+not included. To rebuild it, take the historical section of the Bank of
+England's 2026 ICAAP scenario workbook (Bank Capital Stress Test resources on
+bankofengland.co.uk) and write a quarterly CSV, 2001Q1 onward, with a `quarter`
+column (e.g. `2001Q1`) and these columns in percentage units:
+`real_gdp_growth_annualized_pct`, `unemployment_rate_pct`, `bank_rate_pct`,
+`gilt_10y_pct`, `ig_corporate_spread_pct`, `hpi_qoq_growth_pct`,
+`equity_qoq_growth_pct`, `cpi_inflation_yoy_pct` (the transformations in the
+report's variable table). Pass it with `--uk path.csv` or drop it in place.
 
 ## CLASS application
 
@@ -41,6 +48,9 @@ configuration (about three minutes each); add `--full` for the report protocol
 ## Reproduction
 
 All rows reproduce digit-for-digit except the Student-t GIB-VAR rows, which
-land within a few thousandths: the runs behind the report added an adaptive
+land within about 0.01: the runs behind the report added an adaptive
 likelihood-tempering step when particle weights concentrated, `src/student_t.py`
-resamples instead, and SMC resampling amplifies floating-point noise.
+resamples instead, and SMC resampling amplifies floating-point noise. The row
+also varies across machines (0.6009-0.6104 observed for the US conditional
+task), almost entirely at origins where the particle system degenerates; the
+rankings are unchanged.
