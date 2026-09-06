@@ -1,8 +1,4 @@
-"""data.py -- load the eight CLASS-aligned US variables from the Fed file.
-
-Kept separate from the models so the code never mixes data construction with
-estimation. UK data is licensed and not shipped; see the thesis package.
-"""
+"""Load the US, UK and Conditions B macroeconomic series."""
 
 from __future__ import annotations
 
@@ -12,7 +8,7 @@ import pandas as pd
 FEATURES = ["gdp_growth", "unemployment", "treasury_3m", "treasury_10y",
             "bbb_spread", "hpi_growth", "cre_growth", "equity_growth"]
 
-# author-specified preferred graph, US system (identical to the thesis)
+# Preferred cross-lags: target -> parents.
 PREFERRED = {
     "gdp_growth":   ["unemployment", "treasury_3m", "bbb_spread"],
     "unemployment": ["gdp_growth", "bbb_spread"],
@@ -30,7 +26,7 @@ def load_us_history(path: str) -> pd.DataFrame:
     raw = pd.read_csv(path)
     g = lambda c: pd.to_numeric(
         raw[c].astype(str).str.replace(",", "", regex=False),
-        errors="coerce").to_numpy()          # .to_numpy(): stop index alignment
+        errors="coerce").to_numpy()
     growth = lambda c: pd.Series(g(c)).pct_change().to_numpy() * 100.0
     frame = pd.DataFrame({
         "gdp_growth":    g("Real GDP growth"),
@@ -48,7 +44,7 @@ def load_us_history(path: str) -> pd.DataFrame:
     return frame
 
 
-# ---- UK8 domain (locked uk8 protocol values) ----------------------------
+
 UK_FEATURES = ["real_gdp_growth_annualized_pct", "unemployment_rate_pct",
                "bank_rate_pct", "gilt_10y_pct", "ig_corporate_spread_pct",
                "hpi_qoq_growth_pct", "equity_qoq_growth_pct",
@@ -89,12 +85,7 @@ UK_OWN_LAG = {"real_gdp_growth_annualized_pct": 0.0,
               "cpi_inflation_yoy_pct": 0.0}
 
 def load_uk_history(path: str):
-    """Licensed UK16 processed panel -> canonical UK8 view.
-
-    The file is the provenance-tracked panel written by the research
-    pipeline ('quarter' column + feature columns); it is licensed and never
-    shipped.
-    """
+    """Select the eight UK variables from the licensed panel."""
     raw = pd.read_csv(path)
     missing = {"quarter", *UK_FEATURES}.difference(raw.columns)
     if missing:
@@ -110,11 +101,8 @@ def load_uk_history(path: str):
 
 
 def load_conditions_b(hist_path: str, cond_path: str):
-    """Fed 2024 Exploratory Conditions B -> (history_df, target 12x8 array).
-    Growth/spread construction as in the thesis: BBB spread = yield - 10y;
-    index growth from published levels with the 2023Q4 historic level as base.
-    """
-    hist = load_us_history(hist_path)          # 1990Q1-2023Q4
+    """Build the history and twelve-quarter Conditions B reference."""
+    hist = load_us_history(hist_path)
     raw = pd.read_csv(cond_path)
     g = lambda c: pd.to_numeric(
         raw[c].astype(str).str.replace(",", "", regex=False),
@@ -124,7 +112,7 @@ def load_conditions_b(hist_path: str, cond_path: str):
         hraw[c].astype(str).str.replace(",", "", regex=False),
         errors="coerce").to_numpy()
     def growth(col):
-        levels = np.concatenate([[gh(col)[-1]], g(col)])   # 2023Q4 base
+        levels = np.concatenate([[gh(col)[-1]], g(col)])   # Initial level for the first growth rate.
         return (levels[1:] / levels[:-1] - 1.0) * 100.0
     target = np.column_stack([
         g("Real GDP growth"), g("Unemployment rate"),
@@ -133,6 +121,6 @@ def load_conditions_b(hist_path: str, cond_path: str):
         growth("House Price Index (Level)"),
         growth("Commercial Real Estate Price Index (Level)"),
         growth("Dow Jones Total Stock Market Index (Level)"),
-    ])[:12]                                    # 2024Q1-2026Q4
+    ])[:12]
     assert not np.isnan(target).any()
     return hist, target

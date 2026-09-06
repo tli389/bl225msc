@@ -1,28 +1,4 @@
-"""GIB-VAR -- the generator of the report's design chapter.
-
-Written to follow the report's description step by step so the whole backbone
-can be read in one sitting; check_benchmarks.py reproduces every GIB-VAR
-row of the report from it.
-
-Report step -> code
-  Graph-weighted estimation, one equation per variable      (_fit_equation)
-    * lagged predictors standardised; intercept and own lag partialled out
-      (Frisch-Waugh-Lovell) so they carry no penalty        (_partial_out)
-    * cross columns rescaled by 1 / w_kj (w = 0.35 preferred, 1 otherwise) so
-      one ordinary Lasso solves the weighted objective; beta = gamma / w
-    * lambda chosen by forward validation: 60 log-spaced ratios of lambda_max,
-      2-5 chronological folds, preprocessing redone inside each fold, the
-      ratio with the lowest validation error kept               (_select_ratio)
-    * at most three cross lags: keep the three largest, refit at the same
-      lambda; intercept and own lag recovered by least squares
-  Spectral cap: rho(A) > 0.995 -> A* = 0.995 A / rho(A), c* = x_bar' - A* x_bar
-  Bootstrap bank: 25 refits on non-circular four-quarter blocks of transition
-    pairs; residuals recomputed on the chronological sample for each system;
-    the pool mean moved into the intercept (c = c_hat + r_bar, e = r - r_bar);
-    Sigma = pool covariance + 5% diagonal ridge                  (fit_gibvar)
-  Unconditional generation: one system per path, four-quarter residual blocks
-    resampled from that system's own pool           (sample_unconditional)
-"""
+"""Graph-weighted VAR fitting, bootstrap systems and residual-block generation."""
 
 from __future__ import annotations
 
@@ -37,15 +13,15 @@ class System:
         self.residual_cov, self.residuals = residual_cov, residuals
 
 
-# ----------------------------------------------------------- one equation
 def _partial_out(x, y, target, weights):
-    """Standardise, project out [1, own lag], rescale cross columns by 1/w."""
+    """Partial out intercept/own lag; scale cross residuals by SD and graph weight."""
     n, K = x.shape
     cross = np.array([j for j in range(K) if j != target])
     mean = x.mean(0)
     scale = np.where(x.std(0) > 1e-8, x.std(0), 1.0)
     z = (x - mean) / scale
     own = np.column_stack([np.ones(n), z[:, target]])
+    # Remove the intercept and own lag from both target and cross-lags.
     y_proj, *_ = np.linalg.lstsq(own, y, rcond=None)
     x_proj, *_ = np.linalg.lstsq(own, z[:, cross], rcond=None)
     y_res = y - own @ y_proj
@@ -100,15 +76,17 @@ def _fit_equation(x, y, target, weights, max_parents=3):
         alpha_max = float(np.max(np.abs(fit["design"].T @ fit["y_res"])) / max(n, 1))
         lasso = Lasso(alpha=max(alpha_max * ratio, 1e-12), fit_intercept=False,
                       max_iter=100_000).fit(fit["design"], fit["y_res"])
+        # Retain at most three cross-lags and refit at the same penalty.
         ranked = np.argsort(np.abs(lasso.coef_))[::-1]
         keep = [int(j) for j in ranked if abs(float(lasso.coef_[j])) > 1e-12][:max_parents]
         if keep:
             refit = Lasso(alpha=float(lasso.alpha), fit_intercept=False,
                           max_iter=100_000).fit(fit["design"][:, keep], fit["y_res"])
             gamma[keep] = refit.coef_
-    beta_cross = gamma / fit["weights"] / fit["res_scale"]        # beta = gamma / w
+    beta_cross = gamma / fit["weights"] / fit["res_scale"]
     z = (x - fit["mean"]) / fit["scale"]
     own = np.column_stack([np.ones(n), z[:, target]])
+    # Recover intercept and own lag after subtracting the cross-lag contribution.
     own_coef, *_ = np.linalg.lstsq(own, y - z[:, fit["cross"]] @ beta_cross, rcond=None)
     beta_z = np.zeros(K)
     beta_z[fit["cross"]] = beta_cross
@@ -117,7 +95,6 @@ def _fit_equation(x, y, target, weights, max_parents=3):
     return beta, float(own_coef[0]) - float(beta @ fit["mean"])
 
 
-# ------------------------------------------------------------ one system
 def _regularised_cov(residuals):
     cov = np.atleast_2d(np.cov(residuals, rowvar=False))
     return cov + np.diag(0.05 * np.maximum(np.diag(cov), 1e-6) + 1e-8)
@@ -149,7 +126,7 @@ def _block_pair_indices(n_pairs, block, rng):
 
 
 def fit_gibvar(values, features, graph, seed, n_systems=25, block=4, **kw):
-    """The bank: 25 refits on block-resampled histories, chronological pools."""
+    """Fit bootstrap systems and rebuild their chronological residual pools."""
     values = np.asarray(values, float)
     x, y = values[:-1], values[1:]
     rng = np.random.default_rng(seed + len(values))
@@ -164,7 +141,6 @@ def fit_gibvar(values, features, graph, seed, n_systems=25, block=4, **kw):
     return bank
 
 
-# ----------------------------------------------------- unconditional paths
 def sample_unconditional(bank, n_paths, horizon, rng, jumpoff, block=4):
     """One system per path; four-quarter residual blocks from its own pool."""
     K = len(jumpoff)

@@ -1,15 +1,4 @@
-"""Convert CLASS8 path forecasts to the Minneapolis CLASS macro schema.
-
-The statistical generators model three asset-price indexes as simple
-quarter-on-quarter percentage changes.  The Minneapolis CLASS program instead
-expects index levels and constructs its own log changes and year-on-year
-changes.  This module performs that reversible boundary conversion while
-leaving the supplied CLASS implementation untouched.
-
-The supplied Minneapolis archive fixes its bank state at 2019Q4.  For that
-reason class_q0 is mandatory and future rows must begin in the immediately
-following quarter.  The adapter never silently relabels a later forecast.
-"""
+"""Convert CLASS8 growth rates and spreads to dated Minneapolis CLASS inputs."""
 
 from __future__ import annotations
 
@@ -52,8 +41,7 @@ _LEVEL_GROWTH_PAIRS = (
     ("equity_qoq_growth", "djtsm"),
 )
 _BACKWARD_ALIASES = {
-    # The old US7/US16 implementation used this key for a series whose source
-    # was actually the published three-month Treasury rate.
+    # Legacy aliases both refer to the three-month Treasury rate.
     "fed_funds": "treasury_3m",
     "short_rate": "treasury_3m",
 }
@@ -135,12 +123,7 @@ def _validate_quarterly_index(frame: pd.DataFrame, label: str) -> None:
 
 
 def load_fed_class8_history(path: Path | str) -> pd.DataFrame:
-    """Load a Fed historical file with CLASS8 features and source index levels.
-
-    The canonical asset-price convention is simple quarter-on-quarter percent
-    change, matching the maintained US16 loader.  Rows without all eight model
-    variables are removed, so the joint history currently begins in 1988Q4.
-    """
+    """Load quarterly CLASS8 features together with the source index levels."""
     result = _transform_fed_raw(_load_fed_raw(path))
     result = result.dropna(subset=list(CLASS8_FEATURES)).copy()
     _validate_quarterly_index(result, "Fed CLASS8 history")
@@ -154,13 +137,7 @@ def load_fed_class8_scenario(
     *,
     history_path: Path | str,
 ) -> pd.DataFrame:
-    """Load a 13-quarter Fed scenario using the last actual level as its base.
-
-    The first scenario-quarter growth for HPI, CPPI, and equities is computed
-    against the immediately preceding actual quarter.  This makes the later
-    recursive reconstruction exact rather than treating the first projected
-    index level as an unrelated new base.
-    """
+    """Load 13 future quarters, measuring first-quarter growth from the last actual."""
     scenario_raw = _load_fed_raw(scenario_path)
     if len(scenario_raw) != 13:
         raise ValueError(
@@ -238,13 +215,7 @@ def build_class_macro_input(
     class_q0: str | pd.Period,
     scenario_name: str,
 ) -> pd.DataFrame:
-    """Build the exact four-history plus thirteen-future CLASS input table.
-
-    ``actual_history`` must include the four quarters ending at ``class_q0``
-    and must retain the four source columns returned by
-    :func:`load_fed_class8_history`.  ``future`` is one generated CLASS8 path.
-    The function intentionally rejects any date mismatch instead of rebasing.
-    """
+    """Combine four actual quarters and 13 future quarters without changing dates."""
     q0 = _as_quarter(class_q0)
     if not isinstance(scenario_name, str) or not scenario_name.strip():
         raise ValueError("scenario_name must be a non-empty string")
@@ -260,6 +231,7 @@ def build_class_macro_input(
             "actual history is missing CLASS8/source columns: "
             f"{sorted(missing_history)}"
         )
+    # Four observed quarters supply CLASS lags and annual index changes.
     history_quarters = pd.period_range(q0 - 3, q0, freq="Q")
     absent = history_quarters.difference(history.index)
     if len(absent):
@@ -295,6 +267,7 @@ def build_class_macro_input(
     for quarter, row in history.iterrows():
         rows.append(_class_row(scenario_name, quarter, row))
 
+    # Compound generated growth from the observed jump-off index levels.
     current_levels = {
         level: float(history.iloc[-1][level]) for level in ("hpi", "cppi", "djtsm")
     }
@@ -308,6 +281,7 @@ def build_class_macro_input(
                 )
             current_levels[level] *= multiplier
         augmented = row.copy()
+        # Reconstruct the corporate yield required by CLASS.
         augmented["bbb_corp"] = float(row["bbb_spread"] + row["treasury_10y"])
         for level, value in current_levels.items():
             augmented[level] = value

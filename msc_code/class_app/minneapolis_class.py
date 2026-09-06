@@ -1,17 +1,7 @@
-"""Fit-once projection adapter for the public Minneapolis CLASS model.
+"""Evaluate the public Minneapolis CLASS model with fixed coefficients and banks.
 
-The Federal Reserve Bank of Minneapolis publishes the R program, estimation
-data, fitted coefficients and example outputs used by its 2020 public stress
-test tool:
-
+Source: Federal Reserve Bank of Minneapolis, 2020 public stress test tool.
 https://www.minneapolisfed.org/banking/financial-studies-and-community-banking/covid-19-stress-test-tool
-
-This module does not re-estimate or alter that model. It loads the archive's
-fitted coefficients and 2019Q4 FR Y-9C state once, then evaluates alternative
-eight-variable macroeconomic paths. This is useful for comparing path banks:
-every generator is passed through the same fixed satellite. The implementation
-was independently transcribed from the published model equations and is tested
-against the archive's supplied ``u_extreme`` projection.
 
 The archive has no explicit software licence. Keep it as an external research
 input and consult the Minneapolis Fed terms before redistributing its contents.
@@ -161,12 +151,7 @@ OPERATIONAL_RISK_2020 = 0.874301107 * 144.0 * 1_000_000.0
 
 @dataclass(frozen=True)
 class ClassProjection:
-    """Outputs for one macroeconomic scenario.
-
-    ``aggregate``, ``firm`` and ``breaches`` follow the official CSV schemas.
-    ``detail`` retains projected income, charge-off and provision components so
-    downstream work can report the mechanism behind capital changes.
-    """
+    """Aggregate, bank and component projections for one macroeconomic scenario."""
 
     aggregate: pd.DataFrame
     firm: pd.DataFrame
@@ -200,12 +185,7 @@ def prepare_macro_path(
     date_q0: int = 20191231,
     future_horizon: int = 13,
 ) -> pd.DataFrame:
-    """Validate raw CLASS inputs and construct its macro regressors.
-
-    The input must contain the start quarter, at least its previous three
-    quarters, and ``future_horizon`` consecutive future quarters. The leading
-    history is needed for four-quarter HPI and commercial-property growth.
-    """
+    """Construct CLASS regressors using four actual quarters and the future path."""
 
     missing = sorted(set(RAW_MACRO_COLUMNS).difference(macro.columns))
     if missing:
@@ -238,6 +218,7 @@ def prepare_macro_path(
     if (out[["hpi", "cppi", "djtsm"]] <= 0).any().any():
         raise ValueError("HPI, commercial-property and stock index levels must be positive")
 
+    # Derive the quarterly and annual changes used by the published equations.
     out["spread"] = out["cpr_t10y"] - out["cpr_t3m"]
     out["d10y"] = out["cpr_t10y"].diff()
     out["stockgrowth"] = np.log(out["djtsm"] / out["djtsm"].shift(1)) * 100.0
@@ -296,6 +277,7 @@ class MinneapolisClassProjector:
         self.report_horizon = int(report_horizon)
         if self.projection_horizon < self.report_horizon + 4:
             raise ValueError("Projection horizon must cover report horizon plus four quarters")
+        # Reuse the coefficients and 2019Q4 bank state for every path.
         self._coefficients = self._validate_coefficients(coefficients)
         self._q0 = self._prepare_start_state(y9c)
 
@@ -418,6 +400,7 @@ class MinneapolisClassProjector:
                 0.0,
             )
 
+            # Update six PPNR components, 13 charge-off rates and one AFS return.
             for model in MODEL_NAMES:
                 lag_name = f"cl_{model}_lag"
                 target = f"cl_{model}"
@@ -434,6 +417,7 @@ class MinneapolisClassProjector:
                 )
                 future.drop(columns=lag_name, inplace=True)
 
+            # Convert annualised percentage rates to quarterly dollar amounts.
             future["qint_inc_net"] = future["cl_nim"] / 400.0 * future["cl_intearn_ass"]
             future["qnonint_inc"] = future["cl_nintrat"] / 400.0 * future["cl_assets"]
             future["qtradrev_inc"] = future["cl_tradrat"] / 400.0 * future["cl_trading_ass"]
@@ -493,9 +477,9 @@ class MinneapolisClassProjector:
         )
         work["extra_items"] = 0.0
 
-        # Preserve the category pairing in the published implementation so the
-        # numerical adapter remains a strict reproduction of its reserve rule.
+        # Preserve the published reserve-category pairing.
         reserve_source = {"heloc": "jrlien", "jrlien": "heloc"}
+        # Reserves depend on charge-offs in the following four quarters.
         for category in LOAN_CATEGORIES:
             source = reserve_source.get(category, category)
             work[f"q4_{category}"] = work.groupby("entity", sort=False)[
@@ -506,6 +490,7 @@ class MinneapolisClassProjector:
             [f"qnetxoff_{name}" for name in LOAN_CATEGORIES]
         ].sum(axis=1)
 
+        # Phase the initial reserve gap into the reserve bounds.
         start = work.loc[
             work["quarter_number"] == q0_number, ["entity", "llres", "q4_total"]
         ].copy()
@@ -539,6 +524,7 @@ class MinneapolisClassProjector:
                 reserve.append(value)
             work.loc[idx, "llresX"] = reserve
 
+        # Provisions cover current charge-offs plus the change in reserves.
         work["qprov"] = (
             work["qnetxoff_total"]
             + work["llresX"]
@@ -546,6 +532,7 @@ class MinneapolisClassProjector:
         )
         work["cl_dividend"] = work["cl_dividend"].clip(lower=0.0)
         work.loc[work["quarter_number"] == q0_number, "cl_dividend"] = 0.0
+        # Combine revenue and expenses before provisions and taxes.
         work["ppnr"] = (
             work["qint_inc_net"]
             + work["qnonint_inc"]
@@ -571,9 +558,11 @@ class MinneapolisClassProjector:
         work["taxesX"] = np.where(work["taxes"] > 0.0, 0.0, work["taxes"])
         work.loc[work["quarter_number"] == q0_number, "taxesX"] = 0.0
         work["taxesX2"] = work.groupby("entity", sort=False)["taxesX"].cumsum()
+        # Update CET1 for income, dividends and the tax-loss adjustment.
         work["cet1X"] = work["cet1"] + work["netincX"] - work["dividendX"] + work["taxesX2"]
         work["req_cet1"] = work["req"] * work["rwa"]
 
+        # Report nine quarters; the final four support reserve look-ahead.
         report = work.loc[
             work["quarter_number"] <= q0_number + self.report_horizon
         ].copy()

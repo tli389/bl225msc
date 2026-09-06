@@ -1,14 +1,4 @@
-"""Dense Gaussian VAR -- the benchmark as the report describes it.
-
-  1. dense VAR(1) by ordinary least squares, one equation per variable
-  2. spectral radius above 0.995 -> lag matrix rescaled uniformly and the
-     intercept re-centred so the average one-quarter transition is preserved
-  3. residual covariance regularised by adding 5% of each residual variance
-     to its diagonal
-Shocks are Gaussian N(0, Sigma), independent across quarters; conditional
-completion conditions the twelve-quarter Gaussian path analytically (the
-repository's Gaussian-law sampler does both, so this file only fits).
-"""
+"""Dense Gaussian VAR fitting with a stability cap."""
 
 from __future__ import annotations
 
@@ -27,7 +17,7 @@ def fit_gaussian_var(values, max_radius=0.995):
     x, y = values[:-1], values[1:]
     K = values.shape[1]
 
-    # 1. OLS on standardised lagged predictors, mapped back to raw units
+    # Fit all lagged relationships by OLS and return to original units.
     mean = x.mean(0)
     sd = np.where(x.std(0) > 1e-8, x.std(0), 1.0)
     design = np.column_stack([np.ones(len(x)), (x - mean) / sd])
@@ -35,13 +25,13 @@ def fit_gaussian_var(values, max_radius=0.995):
     coef = beta[1:].T / sd[None, :]                          # row k = equation k
     intercept = beta[0] - coef @ mean
 
-    # 2. stability: rescale the lag matrix, re-centre the intercept
+    # Apply the stability cap and recover the intercept.
     radius = float(np.max(np.abs(np.linalg.eigvals(coef))))
     if radius > max_radius:
         coef = coef * (max_radius / radius)
     intercept = y.mean(0) - x.mean(0) @ coef.T
 
-    # 3. residuals and the regularised one-quarter covariance
+    # Calculate residuals and regularise their one-quarter covariance.
     residuals = y - (x @ coef.T + intercept)
     cov = np.cov(residuals, rowvar=False)
     cov = cov + np.eye(K) * (0.05 * np.maximum(np.diag(cov), 1e-6))

@@ -1,21 +1,4 @@
-"""Fixed-prior Minnesota BVAR -- the benchmark as the report describes it, in ~90 lines.
-
-``check_benchmarks.py`` reproduces every BVAR row of the report from it.
-
-Report step -> code
-  1. arrange the training history into one-quarter transition pairs and
-     standardise lagged predictors and next-quarter targets separately
-  2. the Minnesota prior: own lag ~ N(delta, 0.2^2), cross lags ~ N(0, 0.1^2),
-     intercept ~ N(0, 10^2), Sigma ~ IW(K+2, I_K)
-  3. semi-conjugate Gibbs: draw the coefficients given Sigma (a Gaussian
-     regression draw whose precision is data precision + prior precision),
-     then Sigma given the coefficients (inverse-Wishart from the residuals)
-  4. discard 150 burn-in iterations, keep every third draw, reject draws whose
-     lag matrix has spectral radius >= 0.995, stop at 100 retained systems
-  5. map each retained system back to the original measurement scales
-Generation (unconditional): pick one retained system uniformly, hold it for
-the whole horizon, add Gaussian shocks N(0, Sigma) independently each quarter.
-"""
+"""Fixed-prior Minnesota BVAR fitting and Gaussian generation."""
 
 from __future__ import annotations
 
@@ -32,7 +15,7 @@ class System:
 
 
 def _spd(m, floor=1e-10):
-    """Symmetrise and floor the eigenvalues (numerical hygiene only)."""
+    """Symmetrise and floor eigenvalues for numerical stability."""
     m = 0.5 * (m + m.T)
     vals, vecs = np.linalg.eigh(m)
     return (vecs * np.maximum(vals, floor)[None, :]) @ vecs.T
@@ -41,11 +24,11 @@ def _spd(m, floor=1e-10):
 def fit_minnesota_bvar(values, seed, own_lag_means=None, delta=0.9, own_sd=0.2,
                        cross_sd=0.1, intercept_sd=10.0, n_draws=100,
                        burn_in=150, thin=3, max_radius=0.995, max_iter=20000):
-    """values: (T, K) training history in feature order.  Returns 100 Systems."""
+    """Fit n_draws posterior systems from training values of shape (T, K)."""
     values = np.asarray(values, float)
     T_all, K = values.shape
 
-    # 1. transition pairs, standardised separately for predictors and targets
+    # Standardise predictors and targets separately on the training sample.
     x, y = values[:-1], values[1:]
     x_mean, y_mean = x.mean(0), y.mean(0)
     x_sd = np.where(x.std(0) > 1e-8, x.std(0), 1.0)
@@ -54,8 +37,7 @@ def fit_minnesota_bvar(values, seed, own_lag_means=None, delta=0.9, own_sd=0.2,
     Y = (y - y_mean) / y_sd                                        # (T, K)
     T = len(Y)
 
-    # 2. the Minnesota prior: one anchor and one sd per coefficient
-    #    rows = intercept, then the K lagged predictors; columns = equations
+    # Coefficient priors: rows are predictors; columns are target equations.
     prior_mean = np.zeros((K + 1, K))
     prior_sd = np.full((K + 1, K), cross_sd)
     prior_sd[0] = intercept_sd
@@ -68,7 +50,7 @@ def fit_minnesota_bvar(values, seed, own_lag_means=None, delta=0.9, own_sd=0.2,
     prior_df = K + 2
     prior_scale = np.eye(K) * (prior_df - K - 1)   # = I_K: prior mean of Sigma is I
 
-    # 3. Gibbs sampling, alternating the two conditional draws
+    # Initialise Sigma, then alternate coefficient and covariance draws.
     rng = np.random.default_rng(seed + T_all)
     XtX = X.T @ X
     sigma = np.eye(K)
@@ -91,10 +73,10 @@ def fit_minnesota_bvar(values, seed, own_lag_means=None, delta=0.9, own_sd=0.2,
         sigma = np.atleast_2d(invwishart.rvs(df=prior_df + T,
                                              scale=_spd(prior_scale + R.T @ R),
                                              random_state=rng))
-        # 4. burn-in, thinning, stability
+        # Discard burn-in and thin the candidate draws.
         if it <= burn_in or (it - burn_in - 1) % thin:
             continue
-        # 5. back to the original scales
+        # Convert to original scales before checking stability.
         A = B[1:].T * y_sd[:, None] / x_sd[None, :]
         c = y_mean + y_sd * B[0] - A @ x_mean
         if np.max(np.abs(np.linalg.eigvals(A))) >= max_radius:

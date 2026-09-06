@@ -1,38 +1,4 @@
-"""results.py -- write the rolling-origin results of src/check_benchmarks.py to CSV.
-
-Each run writes one folder, results/<task>_<domain>/, containing
-
-  summary.csv              the thesis table row per generator (CRPS, qWCRPS,
-                           energy, variogram, coverage 80/95, PIT-KS,
-                           standardised widths 80/95), averaged the thesis way:
-                           seeds within origin, then origins equally
-  summary_by_regime.csv    the same averages over all / crisis-overlap /
-                           calm origins (the thesis's subgroup means)
-  crps_by_origin.csv       one row per origin, one column per generator
-                           (CRPS averaged over the three seeds), the
-                           crisis-overlap flag, and which generator is best
-  scores_by_origin.csv     every score for every origin x seed x generator
-  pairwise_differences.csv the "model A minus model B" comparisons reported
-                           in the thesis: mean per-origin difference, how many
-                           origins A wins, and a 95% moving-block bootstrap
-                           interval -- overall, and split into crisis-overlap
-                           and calm origins
-  README.md                what each file is and how the interval is built
-
-How the 95% interval is calculated (identical to the sealed package):
-  1. take the per-origin differences d_1..d_O (seed-averaged CRPS of A minus
-     B, origins in chronological order);
-  2. resample the origin positions with a CIRCULAR MOVING-BLOCK bootstrap:
-     draw ceil(O/L) block starts uniformly, take L consecutive positions
-     from each (wrapping round the end), keep the first O -- blocks keep
-     neighbouring origins together because their twelve-quarter target
-     windows overlap;
-  3. record the mean difference of the resampled origins; repeat 2,000
-     times (seeded so the numbers are reproducible);
-  4. the interval is the 2.5th and 97.5th percentile of those 2,000 means.
-  Block length 3, 2,000 draws, base seed 7 -- the locked protocol.
-  With 19 origins the interval is descriptive, not a formal test.
-"""
+"""Write rolling scores, regime summaries and paired bootstrap intervals."""
 
 from __future__ import annotations
 
@@ -43,15 +9,12 @@ import numpy as np
 import pandas as pd
 
 BLOCK_LENGTH, BOOTSTRAP_DRAWS, BOOTSTRAP_SEED = 3, 2000, 7
-# crisis windows per domain (as in the sealed package): US = GFC + COVID,
-# UK = the UK16 COVID window; an origin is crisis-overlap when its twelve
-# target quarters share at least four quarters with these windows
+# Crisis-overlap windows and minimum overlap.
 CRISIS_WINDOWS = {"US": (("2007Q1", "2010Q4"), ("2019Q3", "2021Q4")),
                   "UK": (("2020Q1", "2021Q4"),)}
 MIN_CRISIS_QUARTERS = 4
 
-# this folder's row names -> the package's method keys (used in the seeds,
-# so the intervals reproduce the sealed package digit-for-digit)
+# Method keys used to derive reproducible seeds.
 METHOD_KEY = {"GIB-VAR": "gibvar_native", "Gaussian VAR": "gaussian_var",
               "Minnesota BVAR": "minnesota_bvar", "AR-t": "univariate_ar_t",
               "Gaussian GIB-VAR": "gibvar_gaussian",
@@ -85,7 +48,7 @@ def crisis_flag(origin: pd.Period, domain: str = "US", horizon: int = 12):
 
 
 def moving_block_resample(n, block_length, rng):
-    """Circular moving-block resample of positions 0..n-1 (package-exact)."""
+    """Resample circular blocks of origin positions."""
     length = min(max(int(block_length), 1), n)
     n_blocks = int(np.ceil(n / length))
     starts = rng.integers(0, n, size=n_blocks)
@@ -120,7 +83,7 @@ def write(task, domain, origin_names, per_origin, seeds, out_dir):
     flags = [crisis_flag(o, domain) for o in origins]
     crisis = np.array([f[0] for f in flags])
 
-    # 1. every score, long format
+    # Store every seed-origin score.
     rows = []
     for gen in generators:
         for i, name in enumerate(origin_names):
@@ -134,7 +97,7 @@ def write(task, domain, origin_names, per_origin, seeds, out_dir):
     long = pd.DataFrame(rows)
     long.to_csv(out / "scores_by_origin.csv", index=False, float_format="%.6f")
 
-    # 2. seed-averaged score per origin (the thesis's per-origin figures)
+    # Average seeds within each origin.
     by_origin = (long.groupby(["origin", "generator"], sort=False)[list(SCORE_KEYS)]
                  .mean().reset_index())
     wide = by_origin.pivot(index="origin", columns="generator", values="crps")
@@ -143,8 +106,7 @@ def write(task, domain, origin_names, per_origin, seeds, out_dir):
     wide["best"] = wide[generators].idxmin(axis=1)
     wide.to_csv(out / "crps_by_origin.csv", float_format="%.6f")
 
-    # 3. the thesis summary table (seeds within origin, then origins equally;
-    #    PIT-KS from the seed-averaged, pooled PITs)
+    # Average origins and pool the seed-averaged PITs.
     from scipy import stats
     summary = []
     for gen in generators:
@@ -160,8 +122,7 @@ def write(task, domain, origin_names, per_origin, seeds, out_dir):
     pd.DataFrame(summary).to_csv(out / "summary.csv", index=False,
                                  float_format="%.6f")
 
-    # 3b. the same averages split by regime (the thesis's crisis-overlap
-    #     and calm subgroup means)
+    # Split summaries into crisis and calm origins.
     regime_rows = []
     for gen in generators:
         g = by_origin[by_origin.generator == gen].set_index("origin").loc[origin_names]
@@ -177,7 +138,7 @@ def write(task, domain, origin_names, per_origin, seeds, out_dir):
     pd.DataFrame(regime_rows).to_csv(out / "summary_by_regime.csv", index=False,
                                      float_format="%.6f")
 
-    # 4. pairwise differences with moving-block bootstrap intervals
+    # Paired differences and circular block-bootstrap intervals.
     rows = []
     for a, b in PAIRS[task]:
         if a not in per_origin or b not in per_origin:

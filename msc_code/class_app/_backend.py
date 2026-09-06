@@ -1,3 +1,5 @@
+"""Adapt local VAR fits and conditional samplers to the CLASS runners."""
+
 from __future__ import annotations
 
 import hashlib
@@ -31,7 +33,7 @@ def clip_to_bounds(paths, features, bounds=None):
 
 
 class GIBVAR:
-    """The scripts' GIB-VAR object; ``fit`` builds the 25-system bank."""
+    """Fit the configured bank of graph-weighted VAR systems."""
 
     def __init__(self, n_dynamics=25, block_length=4, expert_weight=0.35, max_parents=3,
                  max_spectral_radius=0.995, random_state=10_000, path_solver="lars", *,
@@ -55,7 +57,7 @@ class GIBVAR:
 
 
 class MinnesotaPosteriorVARGenerator:
-    """The scripts' BVAR object; ``fit`` runs the semi-conjugate Gibbs sampler."""
+    """Fit the fixed-prior BVAR with semi-conjugate Gibbs sampling."""
 
     def __init__(self, n_dynamics=100, delta=0.9, own_scale=0.2, cross_scale=0.1,
                  intercept_scale=10.0, covariance_prior_df=None, burn_in=150, thin=3,
@@ -96,6 +98,7 @@ def conditional_mixture_sample(generator, supplied_path, observed_features, n_pa
                                features=None, bounds=None, apply_hidden_bounds=True):
     features = tuple(generator.features if features is None else features)
     obs_cols = [features.index(name) for name in observed_features]
+    # Condition each fitted Gaussian system and reweight the mixture.
     paths, info = complete(list(generator.draws_), np.asarray(supplied_path, float), obs_cols,
                            n_paths, rng, np.asarray(jumpoff, float))
     if apply_hidden_bounds:
@@ -126,13 +129,14 @@ def block_bridge_conditional_sample(generator, supplied_path, observed_features,
                                     rng, jumpoff, block_length=4, tau=0.75, kernel="student_t",
                                     degrees_of_freedom=20.0, ess_resample_ratio=0.5,
                                     apply_hidden_bounds=True, features=None, bounds=None, **_tempering):
-    """Tempering / rejuvenation keywords are accepted and ignored (resampling bridge)."""
+    """Use the resampling-only bridge; tempering and rejuvenation options are ignored."""
     if kernel != "student_t":
         raise ValueError("src/student_t.py implements the Student-t kernel only")
     features = tuple(generator.features if features is None else features)
     obs_cols = [features.index(name) for name in observed_features]
     supplied = np.asarray(supplied_path, float)
     observed = supplied if supplied.shape[1] == len(obs_cols) else supplied[:, obs_cols]
+    # Pass the shock-law settings to the local block sampler.
     paths, diag = clean_bridge_sample(list(generator.draws_), observed, obs_cols, n_paths=n_paths,
                                       n_particles=n_particles, rng=rng, jumpoff=np.asarray(jumpoff, float),
                                       block_length=block_length, tau=tau, nu=degrees_of_freedom,

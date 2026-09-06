@@ -1,14 +1,4 @@
-"""Run the isolated unemployment-plus-HPI CLASS8 sensitivity.
-
-The maintained unemployment-only application remains unchanged.  This runner
-reuses its 2019Q4 model specifications and fixed CLASS projector, but supplies
-both the DFAST 2020 severely adverse unemployment path and its matched,
-2019Q4-rebased HPI quarter-on-quarter growth path.
-
---gaussian-only projects only Gaussian GIB--VAR paths plus the matched
-complete-path comparator and requires the corresponding Gaussian-only
-unemployment result for its within-method delta.
-"""
+"""Compare CLASS outcomes conditional on unemployment and HPI growth."""
 
 from __future__ import annotations
 
@@ -63,9 +53,7 @@ from run_generator_comparison import (
 
 HERE = Path(__file__).resolve().parent
 PROJECT_ROOT = HERE.parent
-# Outputs of the two preceding runners (see the README for the run order):
-#   run_matched_official.py    --out results/matched_official
-#   run_generator_comparison.py --out results/generator_comparison
+# Read the matched-path and unemployment-only runs before this comparison.
 DEFAULT_MATCHED_REFERENCE = (
     PROJECT_ROOT / "results" / "matched_official" / "matched_future_class8.csv"
 )
@@ -119,6 +107,7 @@ def _prepare_path_banks(
         raw[:, :, observed_indices] = observed_values[None, :, :]
         if not np.isfinite(raw).all():
             raise RuntimeError(f"{method} returned non-finite raw paths")
+        # Clip the CLASS input copy, then restore both supplied paths exactly.
         operational = clip_to_bounds(
             raw.copy(),
             CLASS8_FEATURES,
@@ -168,11 +157,13 @@ def _sample_completions(
     n_paths = 48 if smoke else int(protocol["design"]["paths"])
     n_particles = 128 if smoke else int(student["conditional_particles"])
     state = history.iloc[-1].to_numpy(dtype=float)
+    # Supply all 13 quarters of unemployment and matched HPI growth.
     observed = reference.loc[:, list(CONDITIONED_FEATURES)].to_numpy(dtype=float)
 
     sampled_banks: dict[str, np.ndarray] = {}
     diagnostics: dict[str, object] = {}
     if not gaussian_only:
+        # The local Student-t backend uses resampling-only block conditioning.
         gib_paths, gib_diagnostics = block_bridge_conditional_sample(
             gib,
             observed,
@@ -221,6 +212,7 @@ def _sample_completions(
     )
     diagnostics[GIB_GAUSSIAN_CASE] = gaussian_gib_diagnostics
     if not gaussian_only:
+        # The BVAR conditions on the same supplied cells.
         bvar_paths, bvar_diagnostics = conditional_mixture_sample(
             bvar,
             supplied,
@@ -374,6 +366,7 @@ def run(
     protocol, domain = _load_domain(Path(protocol_path))
     selected_methods = _selected_methods(gaussian_only)
     operational_bounds = _operational_bounds(domain, NO_LOWER_FLOOR_POLICY)
+    # Estimate the macro models using history only through 2019Q4.
     model_history = load_us_class8_history(Path(history_path)).loc[:Q0].copy()
     actual_history = load_fed_class8_history(Path(history_path)).loc[:Q0].copy()
     if model_history.index.max() != Q0 or actual_history.index.max() != Q0:
@@ -447,6 +440,7 @@ def run(
         encoding="utf-8",
     )
 
+    # Reuse one bank model for every completion and the matched complete path.
     projector = MinneapolisClassProjector.from_files(
         coefficients_path=Path(archive) / "output" / "estimated_model_coefficients.csv",
         y9c_path=Path(archive) / "y9c_bhc_data.csv",
@@ -472,6 +466,7 @@ def run(
             raise RuntimeError(f"matched/rebased CLASS metric changed for {metric}")
     rows.append(reference_metrics)
 
+    # Reconstruct CLASS yields and levels, then project each completed path.
     for method, paths in operational_banks.items():
         print(f"projecting {len(paths)} {method} paths through CLASS", flush=True)
         for index, values in enumerate(paths):

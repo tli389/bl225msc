@@ -1,19 +1,4 @@
-"""Project a Fed severe path through CLASS with the generator seed history.
-
-The generator comparison prepends revised Fed observations for 2019Q1--Q4 to
-every generated path.  The Minneapolis archive's published scenario instead
-contains its own, older 2019 history.  This module constructs a separately
-labelled official-path comparator with the same revised seed history and the
-same frozen CLASS settings as the generated paths.
-
-The default rebase_growth policy preserves the archive scenario's future
-quarter-on-quarter HPI, commercial-property and equity-index movements, then
-rebases those movements onto the revised 2019Q4 index levels.  This matches
-the growth-rate state supplied by the statistical generators.  The optional
-exact_levels policy retains the archive's future index levels literally;
-because its 2019Q4 levels differ from the revised history, this creates a
-revision-driven jump at the splice and is reported only as a sensitivity.
-"""
+"""Rebase the complete DFAST path to the generator history and project CLASS."""
 
 from __future__ import annotations
 
@@ -86,6 +71,7 @@ def _future_class8(
 
     if asset_level_policy not in {"rebase_growth", "exact_levels"}:
         raise ValueError("asset_level_policy must be 'rebase_growth' or 'exact_levels'")
+    # Retain official growth rates; the adapter rebases index levels.
     for growth_name, level_name in ASSET_PAIRS:
         if asset_level_policy == "rebase_growth":
             base = float(q0_row[level_name])
@@ -183,6 +169,7 @@ def run(
         revised_history,
         asset_level_policy=asset_level_policy,
     )
+    # Use the same four actual quarters and index bases as generated paths.
     macro = build_class_macro_input(
         revised_history,
         future,
@@ -190,6 +177,7 @@ def run(
         scenario_name=f"matched_{scenario_name}_{asset_level_policy}",
     )
 
+    # Match the generated-path bank settings without special loss overlays.
     projector = MinneapolisClassProjector.from_files(
         coefficients_path=archive / "output" / "estimated_model_coefficients.csv",
         y9c_path=archive / "y9c_bhc_data.csv",

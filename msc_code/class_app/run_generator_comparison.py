@@ -1,22 +1,4 @@
-"""Run a CLASS8 generator-to-capital comparison at the 2019Q4 snapshot.
-
-This pilot fits GIB--VAR and the Minnesota BVAR to the CLASS-aligned eight-
-variable history available at 2019Q4.  Both models receive the same future
-unemployment path from one Minneapolis scenario (fed_severe by default)
-and complete the other seven variables for 13 quarters.  A declared
-application policy is then applied before the paths enter one frozen,
-fit-once Minneapolis CLASS projector.  The optional no-lower-floor`` policy
-allows negative Treasury rates while preserving every other configured bound.
-
-The fixed DFAST 2020 operational-risk and market-shock overlays are excluded
-by default so differences arise from the completed macroeconomic paths.  The
-output is exploratory and conditional on the 2019Q4 bank state and published
-CLASS coefficients; it is not a current bank-capital forecast.
-
---gaussian-only generates only Gaussian GIB--VAR paths plus the official
-scenario comparator, allowing the sealed Student-t and BVAR results to remain
-unchanged.
-"""
+"""Compare CLASS outcomes conditional on the supplied unemployment path."""
 
 from __future__ import annotations
 
@@ -241,6 +223,7 @@ def _prepare_path_banks(
             raise RuntimeError(f"{name} returned non-finite raw paths")
         raw_banks[name] = raw
 
+        # Clip the CLASS input copy, then restore supplied unemployment.
         operational = clip_to_bounds(
             raw.copy(),
             CLASS8_FEATURES,
@@ -298,6 +281,7 @@ def _fit_models(
     timings: dict[str, float] = {}
 
     started = time.perf_counter()
+    # Fit the generator bank once using history through 2019Q4.
     gib = GIBVAR(
         n_dynamics=n_gib,
         block_length=int(gib_config["block_length"]),
@@ -313,6 +297,7 @@ def _fit_models(
     timings["gibvar"] = time.perf_counter() - started
 
     started = time.perf_counter()
+    # Fit the fixed-prior BVAR on the same history.
     bvar = MinnesotaPosteriorVARGenerator(
         n_dynamics=n_bvar,
         burn_in=burn_in,
@@ -442,8 +427,7 @@ def _projection_metrics(
         "minimum_cet1_ratio_pct": float(aggregate["cap_ratio"].min()),
         "end_cet1_ratio_pct": float(aggregate["cap_ratio"].iloc[-1]),
         "maximum_cet1_drawdown_bn": float(-aggregate["cet1_drop"].min()),
-        # The public Y-9C archive stores dollar quantities in thousands; the
-        # official CLASS output divides them by 1e6 to report USD billions.
+        # Convert archive dollar amounts from thousands to USD billions.
         "cumulative_nco_bn": float(detail["qnetxoff_total"].sum() / 1_000_000.0),
         "cumulative_provisions_bn": float(detail["qprov"].sum() / 1_000_000.0),
         "cumulative_ppnr_bn": float(detail["ppnr"].sum() / 1_000_000.0),
@@ -542,6 +526,7 @@ def _summarize(metrics: pd.DataFrame) -> pd.DataFrame:
         }
         for column in values:
             data = group[column].to_numpy(dtype=float)
+            # Summarise the median and central 90% range across paths.
             for label, quantile in (("p05", 0.05), ("median", 0.50), ("p95", 0.95)):
                 row[f"{column}_{label}"] = float(np.quantile(data, quantile))
         rows.append(row)
@@ -713,6 +698,7 @@ def run(
         encoding="utf-8",
     )
 
+    # Hold the bank model fixed and exclude special loss overlays.
     projector = MinneapolisClassProjector.from_files(
         coefficients_path=Path(archive) / "output" / "estimated_model_coefficients.csv",
         y9c_path=Path(archive) / "y9c_bhc_data.csv",

@@ -1,19 +1,4 @@
-"""Independent AR-t -- the benchmark as the report describes it, one variable at a time:
-
-  x_t = alpha + phi_1 x_{t-1} (+ phi_2 x_{t-2}) + sigma u_t,   u_t ~ t_nu
-  1. AR(1) and AR(2) candidates, each fitted by conditional maximum
-     likelihood (intercept, AR coefficients, scale, degrees of freedom
-     jointly), with 2.1 <= nu <= 30 and the AR polynomial kept inside the
-     0.995 stability region through a partial-autocorrelation parameterisation
-  2. both candidates scored on the same post-lag-two sample; the retained
-     order minimises BIC = -2 loglik + (p + 3) log T
-  3. generation: fitted parameters fixed, independent Student-t shocks drawn
-     across variables and quarters; in the conditional task the supplied
-     column simply replaces the generated one (no cross-variable updating)
-Implementation details kept so the fit is exact: the series is standardised
-before optimisation, L-BFGS-B is started from three degrees-of-freedom values,
-and the best converged start is kept.
-"""
+"""Independent AR-t fitting and generation."""
 
 from __future__ import annotations
 
@@ -32,7 +17,7 @@ def _radius(phi):
 
 
 def _coef_from_pacf(params, order, max_r):
-    """Durbin-Levinson: |kappa| < 1 is exactly the stable region; then cap."""
+    """Map partial autocorrelations to AR coefficients within the radius cap."""
     kappa = np.tanh(np.asarray(params[:order], float))
     phi = kappa if order == 1 else np.array([kappa[0] * (1.0 - kappa[1]), kappa[1]])
     return phi * max_r ** np.arange(1, order + 1)
@@ -93,6 +78,7 @@ def fit_candidate(series, order, max_r=0.995, min_df=2.1, max_df=30.0, hold_back
         ll = _loglik(resid, scale, df)
         return -ll if np.isfinite(ll) else 1e100
 
+    # Jointly fit intercept, AR coefficients, scale and degrees of freedom.
     attempts = []
     for df_start in dict.fromkeys((df0, min_df + 0.5, max_df)):
         s = start.copy()
@@ -116,6 +102,7 @@ def fit_ar_t(values, **kw):
     coef, intercept, scale, df, order = np.zeros((K, 2)), np.zeros(K), np.zeros(K), np.zeros(K), np.zeros(K, int)
     for k in range(K):
         cands = [c for c in (fit_candidate(values[:, k], p, **kw) for p in (1, 2)) if c is not None]
+        # Compare AR(1) and AR(2) by BIC on the same sample.
         best = min(cands, key=lambda c: (c["bic"], c["order"]))
         coef[k, :best["order"]] = best["coef"]
         intercept[k], scale[k], df[k], order[k] = best["intercept"], best["scale"], best["df"], best["order"]

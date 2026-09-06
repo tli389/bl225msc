@@ -1,19 +1,11 @@
-"""scoring.py -- the thesis's seven table columns, exactly as specified.
-
-fair CRPS (M(M-1) correction), qWCRPS (J=1000 midpoint levels, US tail map),
-energy score (M_E=min(M,300), evenly spaced, fair), variogram (all M, p=0.5),
-coverage 80/95, standardised interval widths, rank PIT averaged over seeds
-then pooled into PIT-KS.
-Formulas match the standalone package (verified against envelope.py and
-tail_scores.py); only the code is miniature.
-"""
+"""Predictive scores, coverage, interval widths and PIT."""
 
 from __future__ import annotations
 
 import numpy as np
 from scipy import stats
 
-# tail directions, US and UK (identical to the locked protocols)
+# Adverse-tail directions.
 TAILS = {"gdp_growth": "lower", "unemployment": "upper",
          "treasury_3m": "two_sided", "treasury_10y": "two_sided",
          "bbb_spread": "upper", "hpi_growth": "lower",
@@ -44,7 +36,7 @@ def qwcrps(ens, y, tail):
 
 def energy_score(paths_flat, y_flat):
     m = len(paths_flat)
-    idx = np.linspace(0, m - 1, min(m, 300), dtype=int)  # floor, as package
+    idx = np.linspace(0, m - 1, min(m, 300), dtype=int)  # Up to 300 paths.
     z = paths_flat[idx]
     me = len(z)
     t1 = np.linalg.norm(z - y_flat, axis=1).mean()
@@ -74,6 +66,7 @@ def score_seed_origin(paths, realised, train_std, features):
     qw = np.mean([qwcrps(paths[:, h, j], realised[h, j],
                          TAILS[features[j]]) / train_std[j]
                   for h, j in cells])
+    # Scale and stack the complete scored paths.
     zf = (paths / train_std).reshape(len(paths), -1)
     yf = (realised / train_std).ravel()
     es, vs = energy_score(zf, yf), variogram_score(zf, yf)
@@ -91,14 +84,14 @@ def score_seed_origin(paths, realised, train_std, features):
 
 
 def aggregate(per_seed_origin):
-    """Thesis hierarchy: mean over seeds within origin, then over origins;
-    PITs averaged across seeds per cell, pooled, then KS vs uniform."""
+    """Average seeds within each origin, then average origins."""
     out = {}
     for key in ("crps", "qwcrps", "energy", "variogram", "cov80", "cov95",
                 "width80", "width95"):
         by_origin = [np.mean([s[key] for s in seeds])
                      for seeds in per_seed_origin]
         out[key] = float(np.mean(by_origin))
+    # Average each cell's PIT across seeds before pooling.
     pooled = np.concatenate([np.mean([s["pits"] for s in seeds], axis=0)
                              for seeds in per_seed_origin])
     out["pit_ks"] = float(stats.kstest(pooled, "uniform").statistic)

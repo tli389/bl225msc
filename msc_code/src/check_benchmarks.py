@@ -1,24 +1,4 @@
-"""Run every model of the report on the rolling-origin tasks and write the results.
-
-For each domain (US: 19 origins, UK: 8) and both tasks it fits the six models
-at every origin, generates 1,000 paths under seeds {7, 19, 43}, scores them,
-and writes the results CSV set to results/<task>_<domain>/ (summary.csv --
-the report's table -- plus crps_by_origin.csv, scores_by_origin.csv,
-summary_by_regime.csv and pairwise_differences.csv).  It then prints each
-generator's mean CRPS next to the report's value.
-
-Report rows -- US unconditional: GIB-VAR 0.6293, Gaussian VAR 0.7943, BVAR
-0.6563, AR-t 0.6496; US conditional: Gaussian VAR 0.7338, AR-t 0.6507,
-Gaussian GIB-VAR 0.6002, Student-t GIB-VAR 0.6021, BVAR 0.6184.  UK: 0.8378 /
-1.1570 / 0.9026 / 0.8066 and 1.0653 / 0.8741 / 0.9940 / 0.9784 / 0.9615.
-Every row reproduces digit-for-digit except Student-t, which lands within a
-few thousandths (SMC noise; see student_t.py).  About ten minutes for the US,
-four for the UK.
-
-  python src/check_benchmarks.py                       # US and UK, both tasks
-  python src/check_benchmarks.py --domain US --limit 3 # quick smoke
-  python src/check_benchmarks.py --uk path/to/uk_panel.csv   # UK panel elsewhere
-"""
+"""Run the US and UK rolling-origin evaluations."""
 
 from __future__ import annotations
 
@@ -94,6 +74,7 @@ def run(domain, limit, out_root):
     t0 = time.time()
     for oi, o in enumerate(origins):
         name = str(hist.index[o])
+        # Fit using history through this origin only.
         arr = values[:o + 1]
         gib = fit_gibvar(arr, feats, domain["graph"], stable_seed(7, "gib_fit", name))
         gv = [fit_gaussian_var(arr)]
@@ -102,6 +83,7 @@ def run(domain, limit, out_root):
         ar = fit_ar_t(arr)
 
         x0, realised = values[o], values[o + 1:o + 1 + HORIZON]
+        # Training scales and supplied unemployment path.
         std = arr.std(0, ddof=1)
         supplied = np.zeros_like(realised)
         supplied[:, ci] = realised[:, ci]
@@ -132,6 +114,7 @@ def run(domain, limit, out_root):
                  "Gaussian GIB-VAR": complete(gib, supplied, [ci], N_PATHS, rng("conditional", "Gaussian GIB-VAR"), x0)[0],
                  "Student-t GIB-VAR": t_paths,
                  "Minnesota BVAR": complete(bv, supplied, [ci], N_PATHS, rng("conditional", "Minnesota BVAR"), x0)[0]}
+            # Check supplied values and score the other seven variables.
             for k in COND_ROWS:
                 assert np.abs(c[k][:, :, ci] - realised[:, ci]).max() < 1e-8
                 per_c[k].append(SC.score_seed_origin(np.delete(c[k], ci, 2), r7, s7, f7))

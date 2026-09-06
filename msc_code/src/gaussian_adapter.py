@@ -1,23 +1,4 @@
-"""Gaussian completion adapter -- the report's Gaussian completion subsection.
-
-
-intercept, coef and residual_cov (GIB-VAR's 25 systems, the
-BVAR's 100 posterior draws, or the Gaussian VAR's single system).
-
-Report step -> code
-  * expected path mu_h = c + A mu_{h-1}, mu_0 = x_o                (joint_moments)
-  * per-horizon covariance P_h = A P_{h-1} A' + Sigma, P_0 = 0, and the
-    cross-horizon blocks Omega_{hh'} = A^{h-h'} P_{h'}
-  * split the stacked path into supplied cells S and remaining cells R;
-    d = s - mu_S;  G = Omega_RS Omega_SS^{-1};
-    mu_{R|s} = mu_R + G d;  Omega_{R|s} = Omega_RR - G Omega_SR       (complete)
-  * covariances symmetrised with a small relative eigenvalue floor
-  * each system reweighted by the Gaussian density of s under (mu_S, Omega_SS)
-    (returned with the per-system Mahalanobis distance per supplied cell);
-    each path picks a system by that weight, draws R, restores S exactly
-  * sample_gaussian_law: the same joint normal with nothing supplied -- the
-    law used for the Gaussian VAR and BVAR rows
-"""
+"""Gaussian path moments, conditioning and mixture sampling."""
 
 from __future__ import annotations
 
@@ -35,6 +16,7 @@ def joint_moments(system, jumpoff, horizon):
     A, c, sigma = system.coef, system.intercept, system.residual_cov
     K = len(c)
     mu, P, state, cov = [], [], np.asarray(jumpoff, float), np.zeros((K, K))
+    # No-shock mean and within-quarter forecast covariance.
     for _ in range(horizon):
         state = A @ state + c
         cov = A @ cov @ A.T + sigma
@@ -45,7 +27,8 @@ def joint_moments(system, jumpoff, horizon):
         block = slice(h * K, (h + 1) * K)
         omega[block, block] = P[h]
         cross = P[h]
-        for later in range(h + 1, horizon):                # Omega_{later,h} = A^{later-h} P_h
+        # Propagate covariance across quarters: Omega_(later,h) = A^(later-h) P_h.
+        for later in range(h + 1, horizon):
             cross = A @ cross
             lb = slice(later * K, (later + 1) * K)
             omega[lb, block], omega[block, lb] = cross, cross.T
@@ -69,15 +52,16 @@ def complete(bank, supplied, obs_cols, n_paths, rng, jumpoff):
                                + float(np.sum(rot**2 / vals))))
         omega_rs = omega[np.ix_(hidden, obs)]
         G = ((omega_rs @ vecs) / vals[None, :]) @ vecs.T           # Omega_RS Omega_SS^-1
-        mu_c = mu[hidden] + G @ d                                   # drag the mean
-        omega_c = omega[np.ix_(hidden, hidden)] - G @ omega_rs.T    # shrink the covariance
+        mu_c = mu[hidden] + G @ d                                   # conditional mean
+        omega_c = omega[np.ix_(hidden, hidden)] - G @ omega_rs.T    # conditional covariance
         cv, cvec = _eig_floor(omega_c)
         comps.append((mu_c, cvec * np.sqrt(cv)))
     logliks = np.asarray(logliks)
     weights = np.exp(logliks - logliks.max())
-    weights /= weights.sum()                                        # w~_b
+    weights /= weights.sum()                                        # system probabilities
     assign = rng.choice(len(bank), size=n_paths, p=weights)
     flat = np.empty((n_paths, H * K))
+    # Draw remaining cells jointly and restore the supplied cells.
     for b in np.unique(assign):
         sel = np.flatnonzero(assign == b)
         mu_c, factor = comps[b]

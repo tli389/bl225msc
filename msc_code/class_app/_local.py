@@ -1,12 +1,4 @@
-"""Local wiring for the CLASS application.
-
-The three run_*.py scripts were written inside the sealed research
-package and imported their building blocks through package-relative
-imports.  This module supplies the same names: the generators come from
-../src through _backend.py, and the CLASS8 history loader is the
-package's own, copied verbatim so the feature names match adapter.py and
-data/class/class8_protocol.json.
-"""
+"""Load local CLASS inputs and connect the runners to the generators in src."""
 
 from __future__ import annotations
 
@@ -29,8 +21,6 @@ DEFAULT_HISTORIC_CSV = ROOT / "data" / "us" / "2026_Final_Historic_Domestic.csv"
 DEFAULT_ARCHIVE = ROOT / "data" / "class" / "mpls_archive"
 DEFAULT_PROTOCOL = ROOT / "data" / "class" / "class8_protocol.json"
 
-# --- CLASS8 history loader (verbatim from the package's domains_class8) ---
-
 CLASS8_HISTORY_START = pd.Period("1990Q1", freq="Q")
 
 CLASS8_FEATURES = (
@@ -44,8 +34,7 @@ CLASS8_FEATURES = (
     "equity_qoq_growth",
 )
 
-# Exact columns in the Federal Reserve domestic history and scenario files.
-# Derived features list every raw input needed for their construction.
+# Map model features to the required Federal Reserve source columns.
 CLASS8_SOURCE_COLUMNS: Mapping[str, tuple[str, ...]] = {
     "gdp_growth": ("Real GDP growth",),
     "unemployment": ("Unemployment rate",),

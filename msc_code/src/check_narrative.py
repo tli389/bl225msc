@@ -1,21 +1,4 @@
-"""Fed 2024 Exploratory Conditions B narrative completion on the rebuilds.
-
-Same design as the report's narrative study: fit once to the history ending
-2023Q4 (shared GIB-VAR bank, Minnesota BVAR); for each of the three masks
-supply the two designed paths, complete the other six variables with 1,000
-paths under seeds {7, 19, 43}, and score the completed variables against the
-official reference path.  Seeds follow the locked narrative scheme.
-
-Report rows (CRPS):
-  activity-labour       Gaussian GIB 1.1391  Student-t 1.1435  BVAR 0.9406 (best)
-  property              Gaussian GIB 0.7220  Student-t 0.7057 (best)  BVAR 0.8825
-  high-rate recession   Gaussian GIB 1.1774  Student-t 1.1698 (best)  BVAR 1.1792
-Gaussian GIB-VAR and BVAR reproduce exactly (all four scores); Student-t lands
-within its SMC noise.  About a minute.
-
-  python src/check_narrative.py
-  python src/check_narrative.py historic_csv conditions_b_csv
-"""
+"""Compare three generators on the Conditions B masks."""
 
 from __future__ import annotations
 
@@ -59,9 +42,11 @@ def main(hist_csv, cond_csv):
     feats = list(FEATURES)
     x0, std = values[-1], values.std(0, ddof=1)
     t0 = time.time()
+    # Fit once to history through 2023Q4.
     gib = fit_gibvar(values, feats, PREFERRED, stable_seed(7, "narrative_gib_fit", DOMAIN, JUMPOFF))
     bv = fit_minnesota_bvar(values, stable_seed(211, "narrative_bvar_fit", DOMAIN, JUMPOFF))
     print(f"[{time.time()-t0:4.0f}s] fitted once to {hist.index[0]}-{hist.index[-1]}", flush=True)
+    # Supply two paths for each narrative mask.
     for mask, supplied_feats in MASKS.items():
         idx = [feats.index(f) for f in supplied_feats]
         keep = [j for j in range(len(feats)) if j not in idx]
@@ -77,6 +62,7 @@ def main(hist_csv, cond_csv):
                                        rng=rng("gibvar_student_t"), jumpoff=x0, block_length=4,
                                        tau=TAU, nu=NU, ess_ratio=0.5)
             b, _ = complete(bv, supplied, idx, N_PATHS, rng("minnesota_bvar"), x0)
+            # Check supplied values and score the other six paths.
             for name, paths in (("Gaussian GIB-VAR", g), ("Student-t GIB-VAR", t), ("Minnesota BVAR", b)):
                 assert np.abs(paths[:, :, idx] - observed[None]).max() < 1e-8
                 rows[name].append(SC.score_seed_origin(paths[:, :, keep], target[:, keep],
