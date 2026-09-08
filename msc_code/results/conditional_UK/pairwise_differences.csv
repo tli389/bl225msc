@@ -1,0 +1,49 @@
+task,domain,metric,model_a,model_b,regime,n_origins,a_wins,mean_difference_a_minus_b,ci95_low,ci95_high,interval_includes_zero,bootstrap,block_length,bootstrap_draws,seed
+conditional,UK,crps,Gaussian GIB-VAR,Minnesota BVAR,overall,8,3,0.032459,-0.017597,0.098498,True,circular moving blocks over origins,3,2000,47105
+conditional,UK,crps,Gaussian GIB-VAR,Minnesota BVAR,calm,4,1,-0.002232,-0.082274,0.024448,True,circular moving blocks over origins,3,2000,86741
+conditional,UK,crps,Gaussian GIB-VAR,Minnesota BVAR,crisis,4,2,0.067150,-0.001574,0.263920,True,circular moving blocks over origins,3,2000,53788
+conditional,UK,qwcrps,Gaussian GIB-VAR,Minnesota BVAR,overall,8,2,0.024538,-0.007068,0.060840,True,circular moving blocks over origins,3,2000,49704
+conditional,UK,qwcrps,Gaussian GIB-VAR,Minnesota BVAR,calm,4,1,0.010961,-0.052312,0.032330,True,circular moving blocks over origins,3,2000,22368
+conditional,UK,qwcrps,Gaussian GIB-VAR,Minnesota BVAR,crisis,4,1,0.038114,0.000298,0.151563,False,circular moving blocks over origins,3,2000,35459
+conditional,UK,energy,Gaussian GIB-VAR,Minnesota BVAR,overall,8,5,0.202479,-0.425923,1.198027,True,circular moving blocks over origins,3,2000,93683
+conditional,UK,energy,Gaussian GIB-VAR,Minnesota BVAR,calm,4,3,-0.331577,-0.908355,-0.139317,False,circular moving blocks over origins,3,2000,4153
+conditional,UK,energy,Gaussian GIB-VAR,Minnesota BVAR,crisis,4,2,0.736534,-0.509365,4.233897,True,circular moving blocks over origins,3,2000,87822
+conditional,UK,variogram,Gaussian GIB-VAR,Minnesota BVAR,overall,8,6,-0.039650,-0.100671,0.011242,True,circular moving blocks over origins,3,2000,78512
+conditional,UK,variogram,Gaussian GIB-VAR,Minnesota BVAR,calm,4,2,0.009982,-0.014135,0.022793,True,circular moving blocks over origins,3,2000,24300
+conditional,UK,variogram,Gaussian GIB-VAR,Minnesota BVAR,crisis,4,4,-0.089282,-0.252053,-0.009098,False,circular moving blocks over origins,3,2000,48224
+conditional,UK,crps,Student-t GIB-VAR,Minnesota BVAR,overall,8,3,0.016827,-0.034737,0.073718,True,circular moving blocks over origins,3,2000,17692
+conditional,UK,crps,Student-t GIB-VAR,Minnesota BVAR,calm,4,2,-0.009652,-0.085254,0.015548,True,circular moving blocks over origins,3,2000,4431
+conditional,UK,crps,Student-t GIB-VAR,Minnesota BVAR,crisis,4,1,0.043306,-0.071017,0.131964,True,circular moving blocks over origins,3,2000,83824
+conditional,UK,qwcrps,Student-t GIB-VAR,Minnesota BVAR,overall,8,2,0.004206,-0.023395,0.028615,True,circular moving blocks over origins,3,2000,38752
+conditional,UK,qwcrps,Student-t GIB-VAR,Minnesota BVAR,calm,4,1,0.001005,-0.053276,0.019098,True,circular moving blocks over origins,3,2000,28165
+conditional,UK,qwcrps,Student-t GIB-VAR,Minnesota BVAR,crisis,4,1,0.007407,-0.044613,0.054816,True,circular moving blocks over origins,3,2000,82436
+conditional,UK,energy,Student-t GIB-VAR,Minnesota BVAR,overall,8,3,0.105791,-0.276498,0.488080,True,circular moving blocks over origins,3,2000,82391
+conditional,UK,energy,Student-t GIB-VAR,Minnesota BVAR,calm,4,2,-0.232666,-0.850237,-0.016092,False,circular moving blocks over origins,3,2000,7513
+conditional,UK,energy,Student-t GIB-VAR,Minnesota BVAR,crisis,4,1,0.444248,-0.179073,2.043696,True,circular moving blocks over origins,3,2000,26900
+conditional,UK,variogram,Student-t GIB-VAR,Minnesota BVAR,overall,8,5,-0.059778,-0.130667,0.005578,True,circular moving blocks over origins,3,2000,26349
+conditional,UK,variogram,Student-t GIB-VAR,Minnesota BVAR,calm,4,1,0.009599,-0.016608,0.024983,True,circular moving blocks over origins,3,2000,16530
+conditional,UK,variogram,Student-t GIB-VAR,Minnesota BVAR,crisis,4,4,-0.129156,-0.203197,-0.049073,False,circular moving blocks over origins,3,2000,56117
+conditional,UK,crps,Student-t GIB-VAR,Gaussian GIB-VAR,overall,8,5,-0.015632,-0.041511,0.010304,True,circular moving blocks over origins,3,2000,10666
+conditional,UK,crps,Student-t GIB-VAR,Gaussian GIB-VAR,calm,4,3,-0.007420,-0.014765,-0.000075,False,circular moving blocks over origins,3,2000,65285
+conditional,UK,crps,Student-t GIB-VAR,Gaussian GIB-VAR,crisis,4,2,-0.023844,-0.131956,0.016959,True,circular moving blocks over origins,3,2000,39751
+conditional,UK,qwcrps,Student-t GIB-VAR,Gaussian GIB-VAR,overall,8,7,-0.020331,-0.037275,-0.006964,False,circular moving blocks over origins,3,2000,10681
+conditional,UK,qwcrps,Student-t GIB-VAR,Gaussian GIB-VAR,calm,4,4,-0.009956,-0.019310,-0.000602,False,circular moving blocks over origins,3,2000,25581
+conditional,UK,qwcrps,Student-t GIB-VAR,Gaussian GIB-VAR,crisis,4,3,-0.030707,-0.096748,-0.007327,False,circular moving blocks over origins,3,2000,60293
+conditional,UK,energy,Student-t GIB-VAR,Gaussian GIB-VAR,overall,8,2,-0.096687,-0.509535,0.243969,True,circular moving blocks over origins,3,2000,6724
+conditional,UK,energy,Student-t GIB-VAR,Gaussian GIB-VAR,calm,4,0,0.098911,0.034437,0.163385,False,circular moving blocks over origins,3,2000,69997
+conditional,UK,energy,Student-t GIB-VAR,Gaussian GIB-VAR,crisis,4,2,-0.292286,-2.190200,0.340352,True,circular moving blocks over origins,3,2000,95501
+conditional,UK,variogram,Student-t GIB-VAR,Gaussian GIB-VAR,overall,8,6,-0.020128,-0.053069,0.007747,True,circular moving blocks over origins,3,2000,75274
+conditional,UK,variogram,Student-t GIB-VAR,Gaussian GIB-VAR,calm,4,3,-0.000382,-0.003416,0.008700,True,circular moving blocks over origins,3,2000,40961
+conditional,UK,variogram,Student-t GIB-VAR,Gaussian GIB-VAR,crisis,4,3,-0.039874,-0.069450,0.048856,True,circular moving blocks over origins,3,2000,38779
+conditional,UK,crps,Student-t GIB-VAR,AR-t,overall,8,0,0.104273,0.046559,0.185037,False,circular moving blocks over origins,3,2000,56551
+conditional,UK,crps,Student-t GIB-VAR,AR-t,calm,4,0,0.153227,0.000612,0.220986,False,circular moving blocks over origins,3,2000,58601
+conditional,UK,crps,Student-t GIB-VAR,AR-t,crisis,4,0,0.055319,0.040497,0.077405,False,circular moving blocks over origins,3,2000,29649
+conditional,UK,qwcrps,Student-t GIB-VAR,AR-t,overall,8,2,0.048835,-0.000311,0.113430,True,circular moving blocks over origins,3,2000,42190
+conditional,UK,qwcrps,Student-t GIB-VAR,AR-t,calm,4,1,0.093470,-0.017668,0.136478,True,circular moving blocks over origins,3,2000,68373
+conditional,UK,qwcrps,Student-t GIB-VAR,AR-t,crisis,4,1,0.004199,-0.000540,0.018416,True,circular moving blocks over origins,3,2000,30783
+conditional,UK,energy,Student-t GIB-VAR,AR-t,overall,8,0,1.554884,0.955336,2.226268,False,circular moving blocks over origins,3,2000,67869
+conditional,UK,energy,Student-t GIB-VAR,AR-t,calm,4,0,1.817147,0.293492,2.591187,False,circular moving blocks over origins,3,2000,46892
+conditional,UK,energy,Student-t GIB-VAR,AR-t,crisis,4,0,1.292621,0.775816,2.450574,False,circular moving blocks over origins,3,2000,99261
+conditional,UK,variogram,Student-t GIB-VAR,AR-t,overall,8,4,-0.031983,-0.131225,0.069765,True,circular moving blocks over origins,3,2000,98894
+conditional,UK,variogram,Student-t GIB-VAR,AR-t,calm,4,0,0.066140,0.007874,0.103081,False,circular moving blocks over origins,3,2000,49678
+conditional,UK,variogram,Student-t GIB-VAR,AR-t,crisis,4,4,-0.130107,-0.173462,-0.079624,False,circular moving blocks over origins,3,2000,24540

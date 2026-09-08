@@ -1,0 +1,37 @@
+task,domain,metric,model_a,model_b,regime,n_origins,a_wins,mean_difference_a_minus_b,ci95_low,ci95_high,interval_includes_zero,bootstrap,block_length,bootstrap_draws,seed
+unconditional,UK,crps,GIB-VAR,Minnesota BVAR,overall,8,6,-0.064779,-0.170805,-0.002925,False,circular moving blocks over origins,3,2000,38657
+unconditional,UK,crps,GIB-VAR,Minnesota BVAR,calm,4,3,-0.121311,-0.210344,0.008946,True,circular moving blocks over origins,3,2000,55091
+unconditional,UK,crps,GIB-VAR,Minnesota BVAR,crisis,4,3,-0.008248,-0.033785,0.029102,True,circular moving blocks over origins,3,2000,96530
+unconditional,UK,qwcrps,GIB-VAR,Minnesota BVAR,overall,8,6,-0.051267,-0.130048,-0.000123,False,circular moving blocks over origins,3,2000,22013
+unconditional,UK,qwcrps,GIB-VAR,Minnesota BVAR,calm,4,3,-0.085176,-0.164909,0.017409,True,circular moving blocks over origins,3,2000,53216
+unconditional,UK,qwcrps,GIB-VAR,Minnesota BVAR,crisis,4,3,-0.017358,-0.048767,0.019705,True,circular moving blocks over origins,3,2000,30807
+unconditional,UK,energy,GIB-VAR,Minnesota BVAR,overall,8,8,-0.926125,-1.899838,-0.312333,False,circular moving blocks over origins,3,2000,73850
+unconditional,UK,energy,GIB-VAR,Minnesota BVAR,calm,4,4,-1.314301,-2.344776,-0.002630,False,circular moving blocks over origins,3,2000,40193
+unconditional,UK,energy,GIB-VAR,Minnesota BVAR,crisis,4,4,-0.537950,-1.108771,-0.271268,False,circular moving blocks over origins,3,2000,35585
+unconditional,UK,variogram,GIB-VAR,Minnesota BVAR,overall,8,6,-0.035776,-0.071037,-0.008297,False,circular moving blocks over origins,3,2000,81737
+unconditional,UK,variogram,GIB-VAR,Minnesota BVAR,calm,4,2,-0.047344,-0.094743,0.002608,True,circular moving blocks over origins,3,2000,71351
+unconditional,UK,variogram,GIB-VAR,Minnesota BVAR,crisis,4,4,-0.024207,-0.047609,-0.007371,False,circular moving blocks over origins,3,2000,65183
+unconditional,UK,crps,Gaussian VAR,Minnesota BVAR,overall,8,1,0.254488,0.045396,0.510937,False,circular moving blocks over origins,3,2000,41516
+unconditional,UK,crps,Gaussian VAR,Minnesota BVAR,calm,4,0,0.457316,0.106860,0.621281,False,circular moving blocks over origins,3,2000,32723
+unconditional,UK,crps,Gaussian VAR,Minnesota BVAR,crisis,4,1,0.051661,0.011126,0.156976,False,circular moving blocks over origins,3,2000,68985
+unconditional,UK,qwcrps,Gaussian VAR,Minnesota BVAR,overall,8,0,0.222539,0.049457,0.420450,False,circular moving blocks over origins,3,2000,70814
+unconditional,UK,qwcrps,Gaussian VAR,Minnesota BVAR,calm,4,0,0.394495,0.096652,0.515960,False,circular moving blocks over origins,3,2000,87561
+unconditional,UK,qwcrps,Gaussian VAR,Minnesota BVAR,crisis,4,0,0.050582,0.016895,0.124272,False,circular moving blocks over origins,3,2000,26442
+unconditional,UK,energy,Gaussian VAR,Minnesota BVAR,overall,8,0,3.096400,0.572735,6.384302,False,circular moving blocks over origins,3,2000,45705
+unconditional,UK,energy,Gaussian VAR,Minnesota BVAR,calm,4,0,5.690067,1.486633,7.701071,False,circular moving blocks over origins,3,2000,86825
+unconditional,UK,energy,Gaussian VAR,Minnesota BVAR,crisis,4,0,0.502733,0.173692,0.929764,False,circular moving blocks over origins,3,2000,31444
+unconditional,UK,variogram,Gaussian VAR,Minnesota BVAR,overall,8,1,0.112881,0.009301,0.256973,False,circular moving blocks over origins,3,2000,63052
+unconditional,UK,variogram,Gaussian VAR,Minnesota BVAR,calm,4,0,0.214161,0.032408,0.328936,False,circular moving blocks over origins,3,2000,62527
+unconditional,UK,variogram,Gaussian VAR,Minnesota BVAR,crisis,4,1,0.011602,0.003528,0.025022,False,circular moving blocks over origins,3,2000,63380
+unconditional,UK,crps,GIB-VAR,AR-t,overall,8,4,0.031178,-0.040215,0.118253,True,circular moving blocks over origins,3,2000,60693
+unconditional,UK,crps,GIB-VAR,AR-t,calm,4,1,0.097931,-0.011182,0.146619,True,circular moving blocks over origins,3,2000,48614
+unconditional,UK,crps,GIB-VAR,AR-t,crisis,4,3,-0.035574,-0.134812,0.011437,True,circular moving blocks over origins,3,2000,50396
+unconditional,UK,qwcrps,GIB-VAR,AR-t,overall,8,4,0.005030,-0.052513,0.065422,True,circular moving blocks over origins,3,2000,25620
+unconditional,UK,qwcrps,GIB-VAR,AR-t,calm,4,1,0.056081,-0.026522,0.088484,True,circular moving blocks over origins,3,2000,20795
+unconditional,UK,qwcrps,GIB-VAR,AR-t,crisis,4,3,-0.046022,-0.151918,0.009998,True,circular moving blocks over origins,3,2000,47908
+unconditional,UK,energy,GIB-VAR,AR-t,overall,8,1,0.734555,-0.037919,1.901980,True,circular moving blocks over origins,3,2000,17278
+unconditional,UK,energy,GIB-VAR,AR-t,calm,4,0,1.529819,0.252550,2.285321,False,circular moving blocks over origins,3,2000,41055
+unconditional,UK,energy,GIB-VAR,AR-t,crisis,4,1,-0.060708,-0.720181,0.172907,True,circular moving blocks over origins,3,2000,59843
+unconditional,UK,variogram,GIB-VAR,AR-t,overall,8,3,0.023114,-0.010829,0.071269,True,circular moving blocks over origins,3,2000,51375
+unconditional,UK,variogram,GIB-VAR,AR-t,calm,4,0,0.060197,0.010883,0.094107,False,circular moving blocks over origins,3,2000,87654
+unconditional,UK,variogram,GIB-VAR,AR-t,crisis,4,3,-0.013968,-0.052114,-0.001253,False,circular moving blocks over origins,3,2000,50958
