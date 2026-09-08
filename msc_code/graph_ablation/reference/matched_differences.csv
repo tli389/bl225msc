@@ -1,0 +1,37 @@
+left_variant,left_label,right_variant,right_label,metric,regime,n_origins,mean_difference_left_minus_right,median_difference_left_minus_right,fraction_origins_left_lower,interpretation
+full_gibvar,Soft graph guidance,equal_penalty,Equal penalties,crps,overall,19,-0.002613215052791063,0.0004648161755500535,0.47368421052631576,negative_difference_favors_left_variant
+full_gibvar,Soft graph guidance,equal_penalty,Equal penalties,crps,calm,9,0.0007962518319980516,0.002061105204600011,0.4444444444444444,negative_difference_favors_left_variant
+full_gibvar,Soft graph guidance,equal_penalty,Equal penalties,crps,crisis,10,-0.005681735249101266,-0.00034949948684975807,0.5,negative_difference_favors_left_variant
+full_gibvar,Soft graph guidance,equal_penalty,Equal penalties,qwcrps,overall,19,-0.0035587131300963983,-0.0002175277473522863,0.5263157894736842,negative_difference_favors_left_variant
+full_gibvar,Soft graph guidance,equal_penalty,Equal penalties,qwcrps,calm,9,0.0009114811901309583,0.0017424401685959268,0.4444444444444444,negative_difference_favors_left_variant
+full_gibvar,Soft graph guidance,equal_penalty,Equal penalties,qwcrps,crisis,10,-0.00758188801830102,-0.0011771172890468473,0.6,negative_difference_favors_left_variant
+full_gibvar,Soft graph guidance,equal_penalty,Equal penalties,energy_score,overall,19,-0.05124964659993735,0.0016182170051877165,0.47368421052631576,negative_difference_favors_left_variant
+full_gibvar,Soft graph guidance,equal_penalty,Equal penalties,energy_score,calm,9,0.006051964704684732,0.019632906634123426,0.4444444444444444,negative_difference_favors_left_variant
+full_gibvar,Soft graph guidance,equal_penalty,Equal penalties,energy_score,crisis,10,-0.10282109677409723,-0.01115806014645182,0.5,negative_difference_favors_left_variant
+full_gibvar,Soft graph guidance,equal_penalty,Equal penalties,variogram_score,overall,19,-0.004062630864886388,-0.00048267001864271686,0.5263157894736842,negative_difference_favors_left_variant
+full_gibvar,Soft graph guidance,equal_penalty,Equal penalties,variogram_score,calm,9,0.0003027440025922103,0.0009695622862102848,0.2222222222222222,negative_difference_favors_left_variant
+full_gibvar,Soft graph guidance,equal_penalty,Equal penalties,variogram_score,crisis,10,-0.007991468245617125,-0.0013092647031782284,0.8,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,equal_penalty,Equal penalties,crps,overall,19,0.02579128134017281,0.01144834918233184,0.3684210526315789,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,equal_penalty,Equal penalties,crps,calm,9,0.028751301119980834,0.01692639970417159,0.2222222222222222,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,equal_penalty,Equal penalties,crps,crisis,10,0.02312726353834559,0.001034013920711424,0.5,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,equal_penalty,Equal penalties,qwcrps,overall,19,0.019674208795890012,0.004332411012010318,0.3684210526315789,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,equal_penalty,Equal penalties,qwcrps,calm,9,0.023237120755697713,0.011501761355324464,0.3333333333333333,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,equal_penalty,Equal penalties,qwcrps,crisis,10,0.016467588032063087,0.002473828706087672,0.4,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,equal_penalty,Equal penalties,energy_score,overall,19,0.19821982293811255,0.04898230491131894,0.47368421052631576,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,equal_penalty,Equal penalties,energy_score,calm,9,0.33409880363214906,0.18402651653899227,0.2222222222222222,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,equal_penalty,Equal penalties,energy_score,crisis,10,0.07592874031347971,-0.10757321345568904,0.7,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,equal_penalty,Equal penalties,variogram_score,overall,19,-6.899160886565232e-05,0.0005124282186069196,0.47368421052631576,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,equal_penalty,Equal penalties,variogram_score,calm,9,0.01008586198636922,0.0032807512833233077,0.1111111111111111,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,equal_penalty,Equal penalties,variogram_score,crisis,10,-0.009208359844577038,-0.008874363632609017,0.8,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,full_gibvar,Soft graph guidance,crps,overall,19,0.02840449639296388,0.004957206796797453,0.3684210526315789,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,full_gibvar,Soft graph guidance,crps,calm,9,0.027955049287982783,0.01228102654965485,0.2222222222222222,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,full_gibvar,Soft graph guidance,crps,crisis,10,0.028808998787446853,-0.000661325587171413,0.5,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,full_gibvar,Soft graph guidance,qwcrps,overall,19,0.02323292192598641,0.0022505393229421133,0.42105263157894735,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,full_gibvar,Soft graph guidance,qwcrps,calm,9,0.022325639565566754,0.009759321186728537,0.4444444444444444,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,full_gibvar,Soft graph guidance,qwcrps,crisis,10,0.024049476050364105,0.0019802513976266145,0.4,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,full_gibvar,Soft graph guidance,energy_score,overall,19,0.2494694695380499,0.0729166422094103,0.42105263157894735,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,full_gibvar,Soft graph guidance,energy_score,calm,9,0.32804683892746433,0.1336479147535541,0.1111111111111111,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,full_gibvar,Soft graph guidance,energy_score,crisis,10,0.17874983708757694,-0.0846169337392304,0.7,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,full_gibvar,Soft graph guidance,variogram_score,overall,19,0.003993639256020735,-0.0002836643043587217,0.5263157894736842,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,full_gibvar,Soft graph guidance,variogram_score,calm,9,0.00978311798377701,0.002311188997113023,0.2222222222222222,negative_difference_favors_left_variant
+forced_graph,Forced preferred edges,full_gibvar,Soft graph guidance,variogram_score,crisis,10,-0.0012168915989599128,-0.007215527696956825,0.8,negative_difference_favors_left_variant

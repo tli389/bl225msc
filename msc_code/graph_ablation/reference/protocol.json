@@ -1,0 +1,31 @@
+{
+  "study_id": "us_class8_gibvar_graph_guidance_ablation_20260814",
+  "protocol_version": "1.0",
+  "status": "matched post-development CLASS8 graph-guidance ablation; descriptive",
+  "claim_eligible": false,
+  "source_protocol": "../class8_rolling_origin/protocol.json",
+  "source_protocol_sha256": "a95be3ebc536eaae18baeed2f8644884e22afc3cc7d74bd584497a8ed6ac465b",
+  "reference_results": "../../results/class8_unconditional_full_20260814",
+  "reference_cell_scores_sha256": "d5d5a642bfb81aa4773e1648f5adea04f5b0455b7af036d42eed2acd37a90833",
+  "reference_cell_tolerance": 1e-10,
+  "domain": "us_class8",
+  "task": "unconditional",
+  "scoring_policy": "raw",
+  "variants": [
+    "equal_penalty",
+    "full_gibvar",
+    "forced_graph"
+  ],
+  "variant_definitions": {
+    "equal_penalty": "All candidate cross-lags receive penalty weight 1.0.",
+    "full_gibvar": "Preferred CLASS8 cross-lags receive penalty weight 0.35 and other candidate cross-lags receive weight 1.0.",
+    "forced_graph": "Preferred CLASS8 cross-lags are unpenalised and required; other parents may be selected up to the common three-parent cap."
+  },
+  "common_random_numbers": {
+    "coefficient_refits": "The three variants use identical moving-block bootstrap indices at each origin.",
+    "path_simulation": "The three variants use identical fitted-component assignments and historical residual-block indices for every origin and seed."
+  },
+  "aggregation": "Average the 96 variable-horizon cells within each seed-origin, average the three seeds within each origin, then weight the 19 annual origins equally.",
+  "interpretation_boundary": "This post-development ablation isolates graph guidance within the exploratory CLASS8 GIB-VAR. Forced inclusion imposes neither coefficient signs nor causal effects. Overall and crisis-overlap results are descriptive; the crisis subgroup is not an independent experiment."
+}
+
